@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vào làm bài – Tin 10</title>
+<style>
+  body { font-family: "Segoe UI", Arial, sans-serif; background: #f3f6fa; margin: 0; color: #1d2733; }
+  .wrap { max-width: 640px; margin: 40px auto; background: #fff; border-radius: 14px;
+          box-shadow: 0 2px 12px rgba(0,0,0,.08); padding: 28px 32px; }
+  h1 { font-size: 24px; margin: 0 0 4px; color: #00468c; }
+  .sub { color: #5b6b7c; margin-bottom: 22px; }
+  label { font-weight: 600; }
+  select, button { font-size: 18px; padding: 10px 14px; border-radius: 8px; box-sizing: border-box; }
+  select { width: 100%; border: 1px solid #c9d3de; margin: 8px 0 18px; background: #fff; }
+  button { background: #00468c; color: #fff; border: 0; cursor: pointer; width: 100%; font-weight: 600; }
+  button:disabled { background: #9db0c4; cursor: default; }
+  .loi { background: #fde8e8; color: #a11; border-radius: 8px; padding: 12px; margin-top: 14px; display: none; }
+  .warn { background: #fff4e0; color: #8a4b00; border-radius: 8px; padding: 12px 14px; margin: 0 0 16px; font-size: 15px; line-height: 1.45; }
+  #buoc2 { display: none; }
+  .big { font-size: 20px; font-weight: 700; color: #127a3a; margin: 4px 0 12px; }
+  .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; background: #1aa34a; margin-right: 6px; vertical-align: middle; }
+  .dot.bad { background: #d33; }
+  .dot.wait { background: #c9a000; }
+  .kn { margin-bottom: 16px; }
+  a.btn { display: inline-block; padding: 10px 16px; border-radius: 8px; background: #e8f0fb; color: #00468c;
+          text-decoration: none; font-weight: 600; }
+  .clock { margin-top: 18px; color: #5b6b7c; }
+  #ketThuc { display: none; background: #e8f6ec; border-radius: 10px; padding: 16px; margin-bottom: 16px; text-align: center; }
+  #ketThuc .tt { font-size: 18px; font-weight: 700; color: #127a3a; margin-bottom: 8px; }
+  #ketThuc p { margin: 0 0 12px; color: #1d2733; }
+  a.thoat { display: inline-block; padding: 12px 22px; border-radius: 8px; background: #c62828; color: #fff;
+            text-decoration: none; font-weight: 700; font-size: 18px; }
+  .clock b { font-size: 22px; color: #1d2733; font-variant-numeric: tabular-nums; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Vào làm bài</h1>
+  <div class="sub">Lớp Tin 10 – Thầy Vũ Trường Xuân</div>
+
+  <div id="buoc1">
+    <div id="sebMsg"></div>
+    <label for="ten">Chọn tên của em:</label>
+    <select id="ten"><option value="">Đang tải danh sách…</option></select>
+    <div id="khungMa" style="display:none">
+      <label for="ma">Mã vào bài của em:</label>
+      <input id="ma" type="password" inputmode="numeric" autocomplete="off"
+             style="width:100%;font-size:18px;padding:10px 14px;border-radius:8px;border:1px solid #c9d3de;box-sizing:border-box;margin:8px 0 18px">
+    </div>
+    <button id="nut" disabled>Vào làm bài</button>
+    <div class="loi" id="loi"></div>
+  </div>
+
+  <div id="buoc2">
+    <div id="ketThuc">
+      <div class="tt">Thầy đã kết thúc buổi kiểm tra</div>
+      <p>Em kiểm tra lại bài đã nộp trên VNOJ, rồi bấm nút dưới đây để thoát.</p>
+      <a class="thoat" id="nutThoat" href="#">Thoát SEB</a>
+    </div>
+    <div class="big">✅ Đã vào làm bài: <span id="tenHT"></span></div>
+    <div class="kn"><span class="dot wait" id="dot"></span><span id="ttKetNoi">Đang kết nối với máy thầy…</span></div>
+    <div class="warn"><b>KHÔNG đóng cửa sổ này.</b> Trang đề VNOJ đã mở ở một cửa sổ khác.
+      Cửa sổ này phải mở suốt buổi để báo cho thầy biết em đang làm bài.</div>
+    <a class="btn" id="moLai" target="_blank" rel="noopener">Mở lại trang đề VNOJ</a>
+    <div class="clock">Thời gian làm bài: <b id="dongHo">00:00:00</b></div>
+  </div>
+</div>
+
+<script>
+  var API = 'https://script.google.com/macros/s/AKfycbzsVvzHY2Nb_TPFUl2aq89p9Buie_zfnWWBPchY40zXZet183mgm5rskCf6JL-zkYrzeg/exec';
+  // Gọi máy chủ Google Apps Script của thầy
+  function goi(hanhDong, thamSo, ok, loi) {
+    var q = [];
+    thamSo = thamSo || {};
+    thamSo.api = hanhDong;
+    thamSo._ = Date.now();
+    for (var k in thamSo) q.push(encodeURIComponent(k) + '=' + encodeURIComponent(thamSo[k] == null ? '' : thamSo[k]));
+    fetch(API + '?' + q.join('&'), { redirect: 'follow' })
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (d) { if (d && d.loi && !('ok' in d)) throw new Error(d.loi); ok(d); })
+      .catch(function (e) { if (loi) loi(e); });
+  }
+
+  function $(id) { return document.getElementById(id); }
+
+  var SID = (function () {
+    var a = new Uint8Array(12);
+    (window.crypto || window.msCrypto).getRandomValues(a);
+    return Array.prototype.map.call(a, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+  })();
+  var IS_SEB = /\bSEB\b|SafeExamBrowser/i.test(navigator.userAgent) || typeof window.SafeExamBrowser !== 'undefined';
+  var thongTin = null, batDau = 0, loiLienTiep = 0;
+
+  function hienLoi(s) { var e = $('loi'); e.textContent = s; e.style.display = 'block'; }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  if (!IS_SEB) {
+    $('sebMsg').innerHTML = '<div class="warn">⚠️ Máy chưa nhận ra Safe Exam Browser. ' +
+      'Em hãy mở bài bằng file <b>.seb</b> thầy gửi. Nếu em vẫn vào từ đây, thầy sẽ thấy cảnh báo.</div>';
+  }
+
+  // Tải danh sách lớp
+  goi('thongtin', {}, function (t) {
+      thongTin = t;
+      var s = $('ten');
+      s.innerHTML = '<option value="">— Chọn tên —</option>';
+      t.names.forEach(function (n) {
+        var o = document.createElement('option');
+        o.value = n; o.textContent = n; s.appendChild(o);
+      });
+      if (t.canMa) $('khungMa').style.display = 'block';
+      $('nut').disabled = false;
+    }, function (e) { hienLoi('Không tải được danh sách lớp: ' + e.message + ' — em tải lại trang hoặc báo thầy.'); });
+
+  // Đọc mã cấu hình SEB (nếu SEB cho phép)
+  function layKhoa(cb) {
+    var xong = false;
+    function tra(ck, ver) { if (xong) return; xong = true; cb(ck || '', ver || ''); }
+    try {
+      var S = window.SafeExamBrowser;
+      if (S && S.security) {
+        var doc = function () { tra(S.security.configKey, S.version); };
+        if (typeof S.security.updateKeys === 'function') {
+          S.security.updateKeys(doc);
+          setTimeout(doc, 2500);
+        } else {
+          doc();
+        }
+        return;
+      }
+    } catch (e) {}
+    tra('', '');
+  }
+
+  $('nut').onclick = function () {
+    var ten = $('ten').value;
+    if (!ten) { hienLoi('Em chưa chọn tên.'); return; }
+    if (thongTin.canMa && !$('ma').value.trim()) { hienLoi('Em chưa nhập mã vào bài.'); return; }
+    $('nut').disabled = true;
+    $('loi').style.display = 'none';
+
+    // Mở trang đề ngay lúc bấm (trình duyệt chỉ cho mở cửa sổ mới khi người dùng bấm)
+    var w = null;
+    try { w = window.open(thongTin.contest, '_blank'); } catch (e) { w = null; }
+
+    layKhoa(function (ck, ver) {
+      goi('vao', { sid: SID, ten: ten, ma: $('ma').value, seb: IS_SEB ? '1' : '0', ck: ck, ver: ver,
+                   url: location.href, ua: navigator.userAgent }, function (r) {
+          if (!r.ok) {
+            hienLoi(r.loi);
+            $('nut').disabled = false;
+            if (w) { try { w.close(); } catch (e) {} }
+            return;
+          }
+          vaoThanhCong(ten, r);
+        }, function (e) {
+          hienLoi('Lỗi kết nối: ' + e.message + ' — em bấm lại.');
+          $('nut').disabled = false;
+        });
+    });
+  };
+
+  function vaoThanhCong(ten, r) {
+    $('buoc1').style.display = 'none';
+    $('buoc2').style.display = 'block';
+    $('tenHT').textContent = ten;
+    $('moLai').href = r.contest;
+    batDau = Date.now();
+    setInterval(function () {
+      var s = Math.floor((Date.now() - batDau) / 1000);
+      $('dongHo').textContent = pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s / 60) % 60) + ':' + pad(s % 60);
+    }, 1000);
+    datNhip(Math.max(5, r.chuKy || 15) * 1000);
+    guiTinHieu();
+  }
+
+  function guiTinHieu() {
+    goi('tin', { sid: SID }, function (r) {
+        loiLienTiep = 0;
+        if (r && r.ketThuc) hienKetThuc(r.thoat);
+        $('dot').className = 'dot';
+        $('ttKetNoi').textContent = 'Đã kết nối với máy thầy – lần cuối lúc ' + new Date().toLocaleTimeString('vi-VN');
+      }, function () {
+        loiLienTiep++;
+        if (loiLienTiep >= 2) {
+          $('dot').className = 'dot bad';
+          $('ttKetNoi').textContent = 'Mất kết nối với máy thầy – em kiểm tra mạng và báo thầy.';
+        }
+      });
+  }
+
+  function hienKetThuc(link) {
+    var k = $('ketThuc');
+    if (k.style.display === 'block') return;
+    k.style.display = 'block';
+    try { window.focus(); } catch (e) {}
+    try { if (window.top) window.top.focus(); } catch (e) {}
+    if (link) {
+      // Mở link thoát ngay trong khung này (không mở cửa sổ mới) để SEB nhận ra
+      $('nutThoat').onclick = function (e) {
+        e.preventDefault();
+        window.location.href = link;
+      };
+    }
+    else {
+      $('nutThoat').outerHTML = '<b>Thầy sẽ đọc mật khẩu thoát. Em bấm nút tắt ⏻ ở góc dưới bên phải màn hình rồi nhập mật khẩu.</b>';
+      document.querySelector('#ketThuc p').textContent = 'Em kiểm tra lại bài đã nộp trên VNOJ trước khi thoát.';
+    }
+  }
+
+  // Nhịp gửi tín hiệu: dùng Worker để không bị chậm lại khi cửa sổ bị che
+  function datNhip(ms) {
+    try {
+      var code = 'var t;onmessage=function(e){clearInterval(t);t=setInterval(function(){postMessage(1)},e.data)}';
+      var wk = new Worker(URL.createObjectURL(new Blob([code], { type: 'text/javascript' })));
+      wk.onmessage = guiTinHieu;
+      wk.postMessage(ms);
+      return;
+    } catch (e) {}
+    setInterval(guiTinHieu, ms);
+  }
+</script>
+</body>
+</html>
