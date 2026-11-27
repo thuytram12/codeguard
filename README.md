@@ -1,5 +1,7 @@
 # CodeGuard – Giám sát phòng thi Tin học
 
+> Trong repo còn có app **Chấm Tự Luận** (chấm bài viết tay bằng AI) ở thư mục [`chamtuluan/`](chamtuluan/README.md).
+
 Hệ thống giám sát máy học sinh trong giờ kiểm tra lập trình. Học sinh được dùng:
 
 - **Code::Blocks**: viết, biên dịch, chạy chương trình C/C++ bình thường
