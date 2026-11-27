@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chấm Tự Luận</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
+<style>
+:root{
+  --nen:#f5f6f8; --the:#fff; --chu:#1d2330; --mo:#667085; --vien:#dfe3ea;
+  --chinh:#2457c5; --chinh-chu:#fff; --xanh:#16794c; --xanh-nen:#e6f4ec;
+  --vang:#9a6200; --vang-nen:#fff4dc; --do:#b42318; --do-nen:#fdecea; --xam-nen:#eef0f4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --nen:#14171d; --the:#1c2028; --chu:#e6e9ef; --mo:#9aa3b2; --vien:#2e3440;
+    --chinh:#6c97f0; --chinh-chu:#0d1320; --xanh:#5fcf97; --xanh-nen:#173326;
+    --vang:#f0bd5a; --vang-nen:#3a2d12; --do:#f28b82; --do-nen:#3b1c1a; --xam-nen:#252a33;
+  }
+}
+:root[data-theme="dark"]{
+  --nen:#14171d; --the:#1c2028; --chu:#e6e9ef; --mo:#9aa3b2; --vien:#2e3440;
+  --chinh:#6c97f0; --chinh-chu:#0d1320; --xanh:#5fcf97; --xanh-nen:#173326;
+  --vang:#f0bd5a; --vang-nen:#3a2d12; --do:#f28b82; --do-nen:#3b1c1a; --xam-nen:#252a33;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--nen);color:var(--chu);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{background:var(--the);border-bottom:1px solid var(--vien);padding:12px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:5}
+header h1{font-size:18px;margin:0;flex:1;cursor:pointer}
+main{max-width:1200px;margin:0 auto;padding:20px 16px 60px}
+.the{background:var(--the);border:1px solid var(--vien);border-radius:10px;padding:16px;margin-bottom:16px}
+h2{font-size:17px;margin:0 0 12px} h3{font-size:15px;margin:0 0 8px}
+button,.nut{font:inherit;border:1px solid var(--vien);background:var(--the);color:var(--chu);padding:7px 14px;border-radius:7px;cursor:pointer;text-decoration:none;display:inline-block}
+button:hover,.nut:hover{border-color:var(--chinh)}
+button.chinh,.nut.chinh{background:var(--chinh);border-color:var(--chinh);color:var(--chinh-chu)}
+button.nguyhiem{color:var(--do)}
+button:disabled{opacity:.5;cursor:default}
+input,textarea,select{font:inherit;color:var(--chu);background:var(--the);border:1px solid var(--vien);border-radius:6px;padding:7px 9px;width:100%}
+textarea{min-height:70px;resize:vertical;font-family:ui-monospace,Consolas,monospace;font-size:14px}
+label{display:block;font-size:13px;color:var(--mo);margin:0 0 4px}
+.hang{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end}
+.hang>*{flex:1;min-width:140px}
+.hang>.hep{flex:0 0 auto;min-width:0}
+.mo{color:var(--mo);font-size:13px}
+.ds-de{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.o-de{cursor:pointer}
+.o-de:hover{border-color:var(--chinh)}
+.cau{border:1px solid var(--vien);border-radius:8px;padding:12px;margin-bottom:10px;background:var(--nen)}
+.cau .dau{display:flex;gap:10px;align-items:flex-end;margin-bottom:8px}
+.cau .dau>div{flex:0 0 110px}
+.cau .dau .xoa{margin-left:auto}
+.the-tab{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--vien)}
+.the-tab button{border:none;border-bottom:2px solid transparent;border-radius:0;background:none;padding:8px 14px}
+.the-tab button.on{border-bottom-color:var(--chinh);color:var(--chinh);font-weight:600}
+.vung-tai{border:2px dashed var(--vien);border-radius:10px;padding:22px;text-align:center;cursor:pointer}
+.vung-tai.keo{border-color:var(--chinh);background:var(--xam-nen)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{padding:7px 8px;border-bottom:1px solid var(--vien);text-align:left;vertical-align:top}
+th{color:var(--mo);font-weight:600;font-size:13px;white-space:nowrap}
+td.so,th.so{text-align:right;font-variant-numeric:tabular-nums}
+tbody tr{cursor:pointer} tbody tr:hover{background:var(--xam-nen)}
+.cuon{overflow-x:auto}
+.nhan{display:inline-block;padding:1px 8px;border-radius:20px;font-size:12px;white-space:nowrap}
+.n-xong{background:var(--xanh-nen);color:var(--xanh)}
+.n-cho{background:var(--xam-nen);color:var(--mo)}
+.n-loi{background:var(--do-nen);color:var(--do)}
+.n-xem{background:var(--vang-nen);color:var(--vang)}
+.tong{font-weight:700;font-size:16px}
+.phu{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:20;padding:20px 12px;overflow:auto}
+.phu.mo-ra{display:block}
+.hop{background:var(--the);border-radius:12px;max-width:1150px;margin:0 auto;padding:18px}
+.hop.nho{max-width:520px;margin-top:8vh}
+.chi-tiet{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:18px}
+@media (max-width:820px){.chi-tiet{grid-template-columns:1fr}}
+.anh-bai img{width:100%;border:1px solid var(--vien);border-radius:6px;margin-bottom:8px;cursor:zoom-in;background:#fff}
+.anh-bai{max-height:80vh;overflow:auto}
+.kq-cau{border:1px solid var(--vien);border-radius:8px;padding:12px;margin-bottom:10px}
+.kq-cau .dau{display:flex;justify-content:space-between;gap:8px;margin-bottom:6px}
+.chep{background:var(--xam-nen);border-radius:6px;padding:8px 10px;white-space:pre-wrap;font-size:14px;margin:6px 0;overflow-x:auto}
+.y{font-size:14px;margin:3px 0;padding-left:10px;border-left:3px solid var(--vien)}
+.canh-bao{background:var(--vang-nen);color:var(--vang);border-radius:8px;padding:10px 12px;margin-bottom:10px}
+.loi{background:var(--do-nen);color:var(--do);border-radius:8px;padding:10px 12px;margin-bottom:10px}
+.thong-bao{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--chu);color:var(--nen);padding:9px 16px;border-radius:8px;display:none;z-index:30;max-width:90vw}
+.anh-to{max-width:100%;display:block;margin:0 auto;background:#fff}
+.tep-de{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}
+.tep-de span{background:var(--xam-nen);border-radius:6px;padding:3px 8px;font-size:13px}
+.an{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <h1 onclick="veTrangChu()">📝 Chấm Tự Luận</h1>
+  <span class="mo" id="trangThaiKhoa"></span>
+  <button onclick="moCaiDat()">⚙ Cài đặt</button>
+</header>
+<main id="noi"></main>
+
+<div class="phu" id="phu" onclick="if(event.target===this)dongPhu()"><div class="hop" id="hop"></div></div>
+<div class="thong-bao" id="tb"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const so = x => (x === '' || x == null) ? '' : String(+(+x).toFixed(2)).replace('.', ',');
+let deHienTai = null, tabHienTai = 'bai', hen = null;
+
+async function api(url, opt = {}) {
+  const r = await fetch(url, {headers: {'Content-Type': 'application/json'}, ...opt,
+    body: opt.body && typeof opt.body !== 'string' ? JSON.stringify(opt.body) : opt.body});
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.loi || ('Lỗi ' + r.status));
+  return d;
+}
+function thongBao(s, ms = 3000) { const t = $('#tb'); t.textContent = s; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(() => t.style.display = 'none', ms); }
+function moPhu(html, nho) { $('#hop').className = 'hop' + (nho ? ' nho' : ''); $('#hop').innerHTML = html; $('#phu').classList.add('mo-ra'); }
+function dongPhu() { $('#phu').classList.remove('mo-ra'); $('#hop').innerHTML = ''; }
+function toan(el) { if (window.renderMathInElement) renderMathInElement(el, {delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true}], throwOnError: false}); }
+
+// ------------------------------------------------ cài đặt
+async function kiemTraKhoa() {
+  const c = await api('/api/caidat');
+  $('#trangThaiKhoa').innerHTML = !c.co_thu_vien ? '<span class="nhan n-loi">Chưa cài thư viện anthropic</span>'
+    : c.co_khoa ? '' : '<span class="nhan n-xem">Chưa có khoá API</span>';
+  return c;
+}
+async function moCaiDat() {
+  const c = await api('/api/caidat');
+  moPhu(`<h2>Cài đặt</h2>
+    <p class="mo">App dùng AI Claude (${esc(c.mo_hinh)}) để đọc bài viết tay và chấm. Cần khoá API lấy tại
+    <b>console.anthropic.com</b> → API Keys. Khoá chỉ lưu trên máy này, trong tệp <code>cauhinh.json</code>.</p>
+    ${c.tu_bien_moi_truong ? '<p class="canh-bao">Đang dùng khoá từ biến môi trường ANTHROPIC_API_KEY.</p>' : ''}
+    <label>Khoá API ${c.co_khoa ? '(đang có khoá …' + esc(c.duoi_khoa) + ')' : ''}</label>
+    <input id="oKhoa" type="password" placeholder="sk-ant-..." autocomplete="off">
+    <div class="hang" style="margin-top:14px;justify-content:flex-end">
+      <button class="hep" onclick="dongPhu()">Đóng</button>
+      <button class="hep chinh" onclick="luuKhoa()">Lưu</button>
+    </div>`, true);
+}
+async function luuKhoa() {
+  try { await api('/api/caidat', {method: 'POST', body: {api_key: $('#oKhoa').value}}); dongPhu(); thongBao('Đã lưu khoá API'); kiemTraKhoa(); }
+  catch (e) { alert(e.message); }
+}
+
+// ------------------------------------------------ trang chủ: danh sách đề
+async function veTrangChu() {
+  clearTimeout(hen); deHienTai = null; history.replaceState(null, '', '/');
+  const ds = await api('/api/de');
+  $('#noi').innerHTML = `
+    <div class="hang" style="margin-bottom:16px;align-items:center">
+      <h2 style="margin:0">Các đề kiểm tra</h2>
+      <button class="hep chinh" onclick="moDe(null)">+ Tạo đề mới</button>
+    </div>
+    ${ds.length ? '<div class="ds-de">' + ds.map(d => `
+      <div class="the o-de" onclick="moDe('${d.id}')">
+        <h3>${esc(d.ten)}</h3>
+        <div class="mo">${esc(d.mon)}${d.lop ? ' · Lớp ' + esc(d.lop) : ''} · ${d.cau.length} câu</div>
+        <div class="mo">Đã chấm ${d.so_xong}/${d.so_bai} bài · tạo ${esc(d.tao_luc.slice(0, 10))}</div>
+      </div>`).join('') + '</div>'
+      : `<div class="the"><p>Chưa có đề nào. Bấm <b>Tạo đề mới</b>, nhập các câu hỏi kèm đáp án và thang điểm, rồi tải ảnh bài làm của học sinh lên để AI chấm.</p></div>`}`;
+}
+
+// ------------------------------------------------ một đề
+async function moDe(id) {
+  clearTimeout(hen);
+  if (!id) { deHienTai = {ten: '', mon: 'Toán', lop: '', ghichu: '', cau: [{so: '1', diem: '', noidung: '', dapan: ''}], tep: [], bai: []}; tabHienTai = 'de'; }
+  else { deHienTai = await api('/api/de/' + id); history.replaceState(null, '', '#' + id); if (!deHienTai.bai.length && tabHienTai !== 'de') tabHienTai = 'bai'; }
+  veDe();
+}
+function veDe() {
+  const d = deHienTai;
+  $('#noi').innerHTML = `
+    <div class="hang" style="margin-bottom:8px;align-items:center">
+      <div><button onclick="veTrangChu()">← Danh sách đề</button></div>
+    </div>
+    <h2>${d.id ? esc(d.ten) : 'Đề mới'} ${d.id ? `<span class="mo">· ${esc(d.mon)} · ${d.cau.length} câu · ${so(d.tong)} điểm</span>` : ''}</h2>
+    <div class="the-tab">
+      <button class="${tabHienTai === 'bai' ? 'on' : ''}" ${d.id ? '' : 'disabled'} onclick="tabHienTai='bai';veDe()">Bài làm & kết quả</button>
+      <button class="${tabHienTai === 'de' ? 'on' : ''}" onclick="tabHienTai='de';veDe()">Đề & đáp án</button>
+    </div>
+    <div id="vungTab"></div>`;
+  tabHienTai === 'de' ? veSuaDe() : veBai();
+}
+
+// ---- tab đề & đáp án
+let tepMoi = [];
+function veSuaDe() {
+  clearTimeout(hen); tepMoi = [];
+  const d = deHienTai;
+  $('#vungTab').innerHTML = `
+    <div class="the">
+      <div class="hang">
+        <div style="flex:3"><label>Tên đề</label><input id="dTen" value="${esc(d.ten)}" placeholder="VD: Kiểm tra giữa kỳ I – Toán 9"></div>
+        <div><label>Môn</label><input id="dMon" value="${esc(d.mon)}"></div>
+        <div><label>Lớp</label><input id="dLop" value="${esc(d.lop)}" placeholder="9A"></div>
+      </div>
+    </div>
+    <div class="the">
+      <h3>Câu hỏi, đáp án và thang điểm</h3>
+      <p class="mo">Mỗi câu ghi điểm tối đa và đáp án. Nên chia ý kèm điểm, ví dụ: <i>"Tính đúng Δ = 9: 0,25đ. Kết luận 2 nghiệm x = 1; x = 4: 0,5đ"</i>. Công thức có thể gõ thường hoặc LaTeX.</p>
+      <div id="dsCau">${d.cau.map(oCau).join('')}</div>
+      <button onclick="themCau()">+ Thêm câu</button>
+    </div>
+    <div class="the">
+      <h3>Tệp đề / đáp án (không bắt buộc)</h3>
+      <p class="mo">Nếu đề có hình vẽ, hoặc đáp án đã có sẵn trong tệp PDF/ảnh, tải lên ở đây. AI sẽ đọc cùng với phần gõ ở trên.</p>
+      <div class="tep-de" id="tepCu">${(d.tep || []).map(t => `<span data-ten="${t.ten}"><a href="/api/tep/${d.id}/de/${t.ten}" target="_blank">${t.mime === 'application/pdf' ? '📄' : '🖼'} ${t.ten}</a> <a href="#" onclick="this.parentNode.remove();return false">✕</a></span>`).join('')}</div>
+      <div class="tep-de" id="tepMoiDs"></div>
+      <input type="file" id="dTep" accept="image/*,application/pdf" multiple onchange="chonTepDe(this.files)">
+    </div>
+    <div class="the">
+      <h3>Lưu ý chung khi chấm (không bắt buộc)</h3>
+      <textarea id="dGhiChu" placeholder="VD: Học sinh làm cách khác đúng vẫn cho đủ điểm. Thiếu đơn vị trừ 0,25đ.">${esc(d.ghichu)}</textarea>
+    </div>
+    <div class="hang" style="justify-content:flex-end">
+      ${d.id ? '<button class="hep nguyhiem" onclick="xoaDe()">Xoá đề</button>' : ''}
+      <button class="hep chinh" onclick="luuDe()">💾 Lưu đề</button>
+    </div>`;
+}
+function oCau(c) {
+  return `<div class="cau">
+    <div class="dau">
+      <div><label>Câu số</label><input class="cSo" value="${esc(c.so)}"></div>
+      <div><label>Điểm tối đa</label><input class="cDiem" value="${esc(c.diem === '' ? '' : String(c.diem).replace('.', ','))}" inputmode="decimal" placeholder="2"></div>
+      <button class="xoa nguyhiem" onclick="this.closest('.cau').remove()">Xoá câu</button>
+    </div>
+    <label>Đề bài</label><textarea class="cNoiDung" placeholder="Giải phương trình x² − 5x + 4 = 0">${esc(c.noidung)}</textarea>
+    <label style="margin-top:8px">Đáp án và thang điểm</label><textarea class="cDapAn" style="min-height:100px">${esc(c.dapan)}</textarea>
+  </div>`;
+}
+function themCau() {
+  const n = document.querySelectorAll('.cau').length + 1;
+  $('#dsCau').insertAdjacentHTML('beforeend', oCau({so: String(n), diem: '', noidung: '', dapan: ''}));
+}
+async function chonTepDe(files) {
+  for (const f of files) {
+    try { tepMoi.push(await docTep(f)); $('#tepMoiDs').insertAdjacentHTML('beforeend', `<span>🆕 ${esc(f.name)}</span>`); }
+    catch (e) { alert(f.name + ': ' + e.message); }
+  }
+  $('#dTep').value = '';
+}
+async function luuDe() {
+  const cau = [...document.querySelectorAll('.cau')].map(e => ({
+    so: e.querySelector('.cSo').value, diem: e.querySelector('.cDiem').value,
+    noidung: e.querySelector('.cNoiDung').value, dapan: e.querySelector('.cDapAn').value}));
+  for (const c of cau) if (c.so.trim() && !c.diem.trim()) return alert('Câu ' + c.so + ' chưa có điểm tối đa');
+  try {
+    const d = await api('/api/de', {method: 'POST', body: {
+      id: deHienTai.id, ten: $('#dTen').value, mon: $('#dMon').value, lop: $('#dLop').value,
+      ghichu: $('#dGhiChu').value, cau, tep_moi: tepMoi,
+      giu_tep: [...document.querySelectorAll('#tepCu [data-ten]')].map(e => e.dataset.ten)}});
+    thongBao('Đã lưu đề'); tabHienTai = deHienTai.id ? 'de' : 'bai'; await moDe(d.id);
+  } catch (e) { alert(e.message); }
+}
+async function xoaDe() {
+  if (!confirm('Xoá đề này và TOÀN BỘ bài làm, kết quả đã chấm?')) return;
+  await api('/api/de/' + deHienTai.id, {method: 'DELETE'}); veTrangChu();
+}
+
+// ---- đọc & thu nhỏ ảnh trong trình duyệt trước khi gửi
+const CANH_DAI = 2400;
+function docTep(f) {
+  return new Promise((ok, loi) => {
+    if (f.type === 'application/pdf') {
+      if (f.size > 30e6) return loi(new Error('PDF quá 30 MB'));
+      const r = new FileReader(); r.onload = () => ok({mime: f.type, data: r.result.split(',')[1]}); r.onerror = () => loi(new Error('Không đọc được tệp')); r.readAsDataURL(f); return;
+    }
+    if (!f.type.startsWith('image/')) return loi(new Error('Chỉ nhận ảnh hoặc PDF'));
+    const url = URL.createObjectURL(f), img = new Image();
+    img.onload = () => {
+      const k = Math.min(1, CANH_DAI / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas'); c.width = Math.round(img.naturalWidth * k); c.height = Math.round(img.naturalHeight * k);
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height); g.drawImage(img, 0, 0, c.width, c.height);
+      URL.revokeObjectURL(url); ok({mime: 'image/jpeg', data: c.toDataURL('image/jpeg', 0.88).split(',')[1]});
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); loi(new Error('Trình duyệt không mở được ảnh này (ảnh HEIC của iPhone: hãy chuyển sang JPG)')); };
+    img.src = url;
+  });
+}
+
+// ---- tab bài làm & kết quả
+function veBai() {
+  const d = deHienTai;
+  $('#vungTab').innerHTML = `
+    <div class="the">
+      <h3>Thêm bài làm</h3>
+      <div class="hang" style="margin-bottom:10px">
+        <div><label>Cách tải</label>
+          <select id="cheDo" onchange="$('#oTen').parentNode.classList.toggle('an', this.value!=='mot')">
+            <option value="mot">Các ảnh đã chọn là của 1 học sinh (nhiều trang)</option>
+            <option value="moi">Mỗi ảnh / mỗi PDF là bài của 1 học sinh</option>
+          </select></div>
+        <div><label>Họ tên học sinh (để trống: AI đọc tên trên bài)</label><input id="oTen" placeholder="Nguyễn Văn An"></div>
+      </div>
+      <div class="vung-tai" id="vungTai" onclick="$('#chonAnh').click()">
+        📷 Bấm để chọn ảnh/PDF bài làm, hoặc kéo thả vào đây
+        <div class="mo">Chụp thẳng, đủ sáng, rõ chữ. Mỗi bài tối đa 20 trang.</div>
+      </div>
+      <input type="file" id="chonAnh" class="an" accept="image/*,application/pdf" multiple onchange="taiBai(this.files)">
+      <div class="mo" id="tienDo" style="margin-top:8px"></div>
+    </div>
+    <div class="the">
+      <div class="hang" style="align-items:center;margin-bottom:10px">
+        <h3 style="margin:0">Kết quả <span class="mo" id="demBai"></span></h3>
+        <button class="hep" onclick="chamTatCa(false)">▶ Chấm bài chưa chấm</button>
+        <a class="hep nut chinh" href="/api/de/${d.id}/ketqua.xlsx">⬇ Tải Excel</a>
+      </div>
+      <div class="cuon" id="bangKq"></div>
+    </div>`;
+  const v = $('#vungTai');
+  v.ondragover = e => { e.preventDefault(); v.classList.add('keo'); };
+  v.ondragleave = () => v.classList.remove('keo');
+  v.ondrop = e => { e.preventDefault(); v.classList.remove('keo'); taiBai(e.dataTransfer.files); };
+  veBang();
+}
+function nhanTrangThai(b) {
+  const kq = b.ket_qua;
+  if (b.trang_thai === 'xong') return kq && kq.can_xem_lai ? '<span class="nhan n-xem">Nên xem lại</span>' : '<span class="nhan n-xong">Đã chấm</span>';
+  if (b.trang_thai === 'loi') return '<span class="nhan n-loi">Lỗi</span>';
+  if (b.trang_thai === 'dang_cham') return '<span class="nhan n-cho">⏳ Đang chấm…</span>';
+  if (b.trang_thai === 'cho_cham') return '<span class="nhan n-cho">Đang chờ</span>';
+  return '<span class="nhan n-cho">Chưa chấm</span>';
+}
+function diemCau(b, s) {
+  const c = (b.ket_qua?.cau || []).find(x => String(x.so).trim().toLowerCase() === String(s).trim().toLowerCase());
+  return c ? so(c.diem) : '';
+}
+function veBang() {
+  const d = deHienTai, bs = d.bai;
+  const xong = bs.filter(b => b.trang_thai === 'xong');
+  const tb = xong.length ? xong.reduce((s, b) => s + b.ket_qua.tong_diem, 0) / xong.length : null;
+  $('#demBai').textContent = `· ${xong.length}/${bs.length} bài đã chấm` + (tb != null ? ` · điểm trung bình ${so(tb)}` : '');
+  $('#bangKq').innerHTML = !bs.length ? '<p class="mo">Chưa có bài nào.</p>' : `
+    <table><thead><tr><th class="so">#</th><th>Học sinh</th><th>Trạng thái</th>
+      ${d.cau.map(c => `<th class="so">Câu ${esc(c.so)}<br><span class="mo">/${so(c.diem)}</span></th>`).join('')}
+      <th class="so">Tổng<br><span class="mo">/${so(d.tong)}</span></th></tr></thead>
+    <tbody>${bs.map((b, i) => `<tr onclick="moBai('${b.id}')">
+      <td class="so">${i + 1}</td><td>${esc(b.hoten) || '<span class="mo">(chưa rõ tên)</span>'}</td><td>${nhanTrangThai(b)}</td>
+      ${d.cau.map(c => `<td class="so">${diemCau(b, c.so)}</td>`).join('')}
+      <td class="so tong">${b.trang_thai === 'xong' ? so(b.ket_qua.tong_diem) : ''}</td></tr>`).join('')}</tbody></table>`;
+  clearTimeout(hen);
+  if (bs.some(b => ['cho_cham', 'dang_cham'].includes(b.trang_thai))) hen = setTimeout(lamMoi, 3000);
+}
+async function lamMoi() {
+  if (!deHienTai?.id) return;
+  try {
+    deHienTai = await api('/api/de/' + deHienTai.id);
+    if (tabHienTai === 'bai' && $('#bangKq')) veBang();
+    const id = $('#hop')?.dataset.bai; if (id && $('#phu').classList.contains('mo-ra')) { const b = deHienTai.bai.find(x => x.id === id); if (b && b.trang_thai !== $('#hop').dataset.tt) moBai(id); }
+  } catch (e) { hen = setTimeout(lamMoi, 5000); }
+}
+async function taiBai(files) {
+  files = [...files]; if (!files.length) return;
+  const cheDo = $('#cheDo').value, ten = $('#oTen').value.trim();
+  const nhom = cheDo === 'mot' ? [files] : files.map(f => [f]);
+  if (cheDo === 'mot' && files.length > 20) return alert('Mỗi bài tối đa 20 trang');
+  let n = 0;
+  for (const g of nhom) {
+    $('#tienDo').textContent = `Đang gửi bài ${++n}/${nhom.length}…`;
+    try {
+      const trang = []; for (const f of g) trang.push(await docTep(f));
+      await api(`/api/de/${deHienTai.id}/bai`, {method: 'POST', body: {hoten: cheDo === 'mot' ? ten : '', trang}});
+    } catch (e) { alert(g.map(f => f.name).join(', ') + ': ' + e.message); }
+  }
+  $('#tienDo').textContent = `Đã gửi ${nhom.length} bài, AI đang chấm…`; $('#oTen').value = ''; $('#chonAnh').value = '';
+  lamMoi();
+}
+async function chamTatCa(lai) {
+  const r = await api(`/api/de/${deHienTai.id}/chamtatca`, {method: 'POST', body: {cham_lai: lai}});
+  thongBao(r.so_bai ? `Đã đưa ${r.so_bai} bài vào hàng chấm` : 'Không có bài nào cần chấm'); lamMoi();
+}
+
+// ---- chi tiết một bài
+function moBai(id) {
+  const d = deHienTai, b = d.bai.find(x => x.id === id); if (!b) return;
+  const kq = b.ket_qua;
+  const anh = b.trang.map((t, i) => t.mime === 'application/pdf'
+    ? `<p><a class="nut" href="/api/tep/${d.id}/${b.id}/${t.ten}" target="_blank">📄 Mở PDF trang ${i + 1}</a></p>`
+    : `<img src="/api/tep/${d.id}/${b.id}/${t.ten}" alt="Trang ${i + 1}" onclick="window.open(this.src)">`).join('');
+  let phai = '';
+  if (b.trang_thai === 'loi') phai = `<div class="loi">${esc(b.loi)}</div>`;
+  else if (b.trang_thai !== 'xong') phai = `<p class="mo">${nhanTrangThai(b)} Kết quả sẽ hiện ở đây khi AI chấm xong.</p>`;
+  else {
+    phai = (kq.can_xem_lai ? `<div class="canh-bao">⚠ <b>Nên xem lại:</b> ${esc(kq.can_xem_lai)}</div>` : '') + `
+      <div class="hang" style="align-items:center;margin-bottom:10px">
+        <div class="tong" style="font-size:22px">${so(kq.tong_diem)} / ${so(d.tong)} điểm</div>
+        <div class="mo hep">Độ tin cậy: ${({cao: 'cao', trung_binh: 'trung bình', thap: 'thấp'})[kq.do_tin_cay] || ''}</div>
+      </div>
+      ${kq.cau.map(c => `<div class="kq-cau">
+        <div class="dau"><b>Câu ${esc(c.so)}</b><b>${so(c.diem)}${c.toi_da != null ? ' / ' + so(c.toi_da) : ''}</b></div>
+        <div class="mo">Học sinh viết:</div><div class="chep">${esc(c.chep_lai) || '<i>(bỏ trống)</i>'}</div>
+        ${(c.cac_y || []).map(y => `<div class="y"><b>${esc(y.y)}</b> — ${so(y.diem)}/${so(y.toi_da)}. ${esc(y.nhan_xet)}</div>`).join('')}
+        <p style="margin:6px 0 0">${esc(c.nhan_xet)}</p></div>`).join('')}
+      <h3>Nhận xét chung</h3><p>${esc(kq.nhan_xet_chung)}</p>
+      <p class="mo">Chấm lúc ${esc(b.cham_luc)} · ${b.thong_ke ? esc(b.thong_ke.giay) + ' giây' : ''}</p>`;
+  }
+  moPhu(`<div class="hang" style="align-items:flex-end;margin-bottom:14px">
+      <div style="flex:2"><label>Họ tên học sinh</label><input id="bTen" value="${esc(b.hoten)}" onchange="doiTen('${b.id}', this.value)"></div>
+      <button class="hep" onclick="chamLai('${b.id}')" ${['cho_cham', 'dang_cham'].includes(b.trang_thai) ? 'disabled' : ''}>↻ Chấm lại</button>
+      <button class="hep nguyhiem" onclick="xoaBai('${b.id}')">Xoá bài</button>
+      <button class="hep" onclick="dongPhu()">Đóng ✕</button>
+    </div>
+    <div class="chi-tiet"><div class="anh-bai">${anh}</div><div id="kqBai">${phai}</div></div>`);
+  $('#hop').dataset.bai = id; $('#hop').dataset.tt = b.trang_thai;
+  toan($('#kqBai'));
+}
+async function doiTen(id, ten) { await api(`/api/bai/${deHienTai.id}/${id}/sua`, {method: 'POST', body: {hoten: ten}}); thongBao('Đã đổi tên'); lamMoi(); }
+async function chamLai(id) { await api(`/api/bai/${deHienTai.id}/${id}/cham`, {method: 'POST', body: {}}); dongPhu(); thongBao('Đã đưa vào hàng chấm'); lamMoi(); }
+async function xoaBai(id) {
+  if (!confirm('Xoá bài làm này?')) return;
+  try { await api(`/api/bai/${deHienTai.id}/${id}`, {method: 'DELETE'}); dongPhu(); lamMoi(); } catch (e) { alert(e.message); }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') dongPhu(); });
+kiemTraKhoa();
+location.hash.length === 11 ? moDe(location.hash.slice(1)).catch(veTrangChu) : veTrangChu();
+</script>
+</body>
+</html>
