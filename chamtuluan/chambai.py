@@ -9,6 +9,7 @@ Cần: Python 3.9+, thư viện anthropic (chay.bat tự cài), khoá API của 
 """
 import base64
 import datetime
+import hashlib
 import io
 import json
 import os
@@ -22,7 +23,7 @@ import uuid
 import webbrowser
 import zipfile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import unquote, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 try:
     import anthropic
@@ -35,6 +36,7 @@ CAU_HINH = os.path.join(THU_MUC, 'cauhinh.json')
 TRANG = os.path.join(THU_MUC, 'trang.html')
 CONG = 8800
 SO_LUONG_CHAM_CUNG_LUC = 3
+SO_BAI_MAU = 4  # số bài giáo viên đã duyệt gửi kèm làm mẫu khi chấm
 
 MO_HINH = 'claude-opus-5-5'
 DO_KY = 'high'  # mức suy nghĩ khi chấm: low | medium | high | xhigh | max
@@ -235,15 +237,53 @@ def tong_toi_da(de):
     return lam_tron(sum(float(c.get('diem', 0)) for c in de.get('cau', [])), 0.01)
 
 
+def so_vn(x):
+    if x is None or x == '':
+        return ''
+    return ('%g' % round(float(x), 2)).replace('.', ',')
+
+
+def chon_bai_mau(de_id, tru_id=None):
+    """Bài giáo viên đã duyệt, được phép làm mẫu. Ưu tiên bài GV có sửa so với AI, rồi bài mới duyệt."""
+    ds = [b for b in ds_bai(de_id)
+          if b.get('duyet') and b['duyet'].get('lam_mau', True) and b['id'] != tru_id]
+    ds.sort(key=lambda b: b['duyet'].get('luc', ''), reverse=True)
+    ds.sort(key=lambda b: not b['duyet'].get('co_sua'))
+    return ds[:SO_BAI_MAU]
+
+
+def van_ban_bai_mau(cac_bai):
+    dong = ['BÀI MẪU GIÁO VIÊN ĐÃ CHẤM',
+            'Đây là bài của học sinh khác cùng đề, giáo viên đã duyệt điểm. Hãy cho điểm theo đúng cách '
+            'và mức độ khắt khe của giáo viên trong các bài mẫu. Chỗ ghi "AI chấm ban đầu" là chỗ giáo viên '
+            'đã sửa điểm của AI: tránh lặp lại sai lệch đó.', '']
+    for i, b in enumerate(cac_bai, 1):
+        ai = {chuan_so(c['so']): c for c in (b.get('ket_qua') or {}).get('cau', [])}
+        dong.append(f'--- Bài mẫu {i} ---')
+        for c in b['duyet']['cau']:
+            dong.append(f"Câu {c['so']}, học sinh viết:\n{c.get('chep_lai') or '(bỏ trống)'}")
+            dong_diem = f"Điểm giáo viên cho: {so_vn(c['diem'])}/{so_vn(c.get('toi_da'))}"
+            a = ai.get(chuan_so(c['so']))
+            if a and abs(float(a['diem']) - float(c['diem'])) > 1e-9:
+                dong_diem += f" (AI chấm ban đầu: {so_vn(a['diem'])})"
+            dong.append(dong_diem)
+            if c.get('nhan_xet'):
+                dong.append('Nhận xét của giáo viên: ' + c['nhan_xet'])
+        dong.append('')
+    return '\n'.join(dong)
+
+
 def cham_mot_bai(de_id, bai_id):
     de = doc_de(de_id)
-    bai = doc_bai(de_id, bai_id)
-    if not de or not bai:
-        return
-    bai['trang_thai'] = 'dang_cham'
-    bai['loi'] = ''
-    ghi_bai(bai)
+    with khoa:
+        bai = doc_bai(de_id, bai_id)
+        if not de or not bai:
+            return
+        bai['trang_thai'] = 'dang_cham'
+        bai['loi'] = ''
+        ghi_bai(bai)
 
+    cap_nhat = {}
     try:
         if anthropic is None:
             raise RuntimeError('Chưa cài thư viện anthropic. Chạy lại chay.bat để cài tự động.')
@@ -252,14 +292,25 @@ def cham_mot_bai(de_id, bai_id):
             raise RuntimeError('Chưa nhập khoá API. Bấm ⚙ Cài đặt ở góc trên trang.')
         client = anthropic.Anthropic(api_key=api_key, max_retries=4)
 
-        # Phần đề + đáp án: giống nhau cho mọi bài của cùng đề -> đặt trước để dùng bộ nhớ đệm.
+        # 1) Đề + đáp án: giống nhau cho mọi bài cùng đề -> đặt đầu để dùng bộ nhớ đệm.
         noi_dung = []
         for t in de.get('tep', []):
             noi_dung.append(khoi_noi_dung(os.path.join(tm_de(de_id), 'tep', t['ten']), t['mime']))
         noi_dung.append({'type': 'text', 'text': van_ban_de(de),
                          'cache_control': {'type': 'ephemeral'}})
-        # Phần bài làm của học sinh.
-        noi_dung.append({'type': 'text', 'text': f"BÀI LÀM CỦA HỌC SINH ({len(bai['trang'])} trang, theo thứ tự):"})
+        # 2) Cách chấm của giáo viên: lưu ý chung + bài mẫu đã duyệt (chỉ gửi chữ, không gửi ảnh).
+        phong_cach = ((doc_json(CAU_HINH, {}) or {}).get('phong_cach') or '').strip()
+        bai_mau = chon_bai_mau(de_id, bai_id)
+        phan_gv = []
+        if phong_cach:
+            phan_gv.append('THÓI QUEN CHẤM CỦA GIÁO VIÊN (áp dụng cho mọi đề):\n' + phong_cach)
+        if bai_mau:
+            phan_gv.append(van_ban_bai_mau(bai_mau))
+        if phan_gv:
+            noi_dung.append({'type': 'text', 'text': '\n\n'.join(phan_gv),
+                             'cache_control': {'type': 'ephemeral'}})
+        # 3) Bài làm của học sinh.
+        noi_dung.append({'type': 'text', 'text': f"BÀI LÀM CỦA HỌC SINH CẦN CHẤM ({len(bai['trang'])} trang, theo thứ tự):"})
         for i, t in enumerate(bai['trang'], 1):
             noi_dung.append({'type': 'text', 'text': f'Trang {i}:'})
             noi_dung.append(khoi_noi_dung(os.path.join(tm_bai(de_id, bai_id), t['ten']), t['mime']))
@@ -296,23 +347,31 @@ def cham_mot_bai(de_id, bai_id):
                 d = min(d, c['toi_da'])
             c['diem'] = d
         kq['tong_diem'] = lam_tron(sum(c['diem'] for c in kq['cau']), 0.01)
+        kq['so_bai_mau'] = len(bai_mau)
 
         u = tra_loi.usage
-        bai['ket_qua'] = kq
-        bai['trang_thai'] = 'xong'
-        bai['cham_luc'] = bay_gio()
-        bai['thong_ke'] = {
-            'giay': round(time.time() - bat_dau, 1),
-            'mo_hinh': tra_loi.model,
-            'token_vao': (u.input_tokens or 0) + (u.cache_read_input_tokens or 0) + (u.cache_creation_input_tokens or 0),
-            'token_ra': u.output_tokens,
+        cap_nhat = {
+            'ket_qua': kq, 'trang_thai': 'xong', 'loi': '', 'cham_luc': bay_gio(),
+            'thong_ke': {
+                'giay': round(time.time() - bat_dau, 1),
+                'mo_hinh': tra_loi.model,
+                'token_vao': (u.input_tokens or 0) + (u.cache_read_input_tokens or 0) + (u.cache_creation_input_tokens or 0),
+                'token_ra': u.output_tokens,
+            },
         }
+    except Exception as e:  # noqa: BLE001 – mọi lỗi đều hiện cho thầy/cô thấy
+        cap_nhat = {'trang_thai': 'loi', 'loi': mo_ta_loi(e)}
+
+    # Đọc lại bài rồi mới ghi: trong lúc chấm, thầy/cô có thể đã đổi tên hoặc duyệt điểm.
+    with khoa:
+        bai = doc_bai(de_id, bai_id)
+        if not bai:
+            return  # bài đã bị xoá
+        bai.update(cap_nhat)
+        kq = cap_nhat.get('ket_qua') or {}
         if not bai.get('hoten') and kq.get('hoten_tren_bai'):
             bai['hoten'] = kq['hoten_tren_bai'].strip()
-    except Exception as e:  # noqa: BLE001 – mọi lỗi đều hiện cho thầy/cô thấy
-        bai['trang_thai'] = 'loi'
-        bai['loi'] = mo_ta_loi(e)
-    ghi_bai(bai)
+        ghi_bai(bai)
 
 
 def mo_ta_loi(e):
@@ -404,21 +463,90 @@ def tao_xlsx(cac_hang, ten_trang='Ket qua'):
     return out.getvalue()
 
 
+def ket_qua_cuoi(b):
+    """Điểm chính thức: bản giáo viên duyệt; chưa duyệt thì dùng điểm AI."""
+    if b.get('duyet'):
+        return b['duyet']
+    if b.get('trang_thai') == 'xong':
+        return b.get('ket_qua')
+    return None
+
+
 def bang_ket_qua(de_id):
     de = doc_de(de_id)
     cau = [str(c['so']) for c in de.get('cau', [])]
-    hang = [['STT', 'Họ và tên'] + [f'Câu {s}' for s in cau] + ['Tổng điểm', 'Cần xem lại', 'Nhận xét chung']]
+    hang = [['STT', 'Họ và tên'] + [f'Câu {s}' for s in cau]
+            + ['Tổng điểm', 'Giáo viên đã duyệt', 'Tổng điểm AI', 'Cần xem lại', 'Nhận xét chung']]
     for i, b in enumerate(ds_bai(de_id), 1):
-        kq = b.get('ket_qua') or {}
-        diem = {chuan_so(c['so']): c['diem'] for c in kq.get('cau', [])}
+        kq = ket_qua_cuoi(b)
+        ai = b.get('ket_qua') or {}
         dong = [i, b.get('hoten') or '(chưa rõ tên)']
-        dong += [diem.get(chuan_so(s), '') for s in cau]
-        if b.get('trang_thai') == 'xong':
-            dong += [kq.get('tong_diem', ''), kq.get('can_xem_lai', ''), kq.get('nhan_xet_chung', '')]
+        if kq:
+            diem = {chuan_so(c['so']): c['diem'] for c in kq.get('cau', [])}
+            dong += [diem.get(chuan_so(s), '') for s in cau]
+            dong += [kq.get('tong_diem', ''), 'Có' if b.get('duyet') else '',
+                     ai.get('tong_diem', '') if b.get('trang_thai') == 'xong' else '',
+                     '' if b.get('duyet') else ai.get('can_xem_lai', ''), kq.get('nhan_xet_chung', '')]
         else:
-            dong += ['', 'Chưa chấm xong' if b.get('trang_thai') != 'loi' else 'Lỗi: ' + b.get('loi', ''), '']
+            dong += [''] * len(cau)
+            dong += ['', '', '', 'Chưa chấm xong' if b.get('trang_thai') != 'loi' else 'Lỗi: ' + b.get('loi', ''), '']
         hang.append(dong)
     return hang
+
+
+def xuat_du_lieu(de_id=None, an_danh=True):
+    """Gói các bài giáo viên đã duyệt thành tệp zip, dùng để đánh giá hoặc huấn luyện AI sau này."""
+    if de_id:
+        ds_de = [an_toan_id(de_id)]
+    else:
+        ds_de = [t for t in (os.listdir(DU_LIEU) if os.path.isdir(DU_LIEU) else [])
+                 if re.fullmatch(r'[0-9a-f]{10}', t)]
+    mau = []
+    out = io.BytesIO()
+    with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as z:
+        for did in ds_de:
+            de = doc_de(did)
+            if not de:
+                continue
+            cac_bai = [b for b in ds_bai(did) if b.get('duyet')]
+            if not cac_bai:
+                continue
+            z.writestr(f'de/{did}.json', json.dumps(de, ensure_ascii=False, indent=1))
+            for t in de.get('tep', []):
+                duong = os.path.join(tm_de(did), 'tep', t['ten'])
+                if os.path.isfile(duong):
+                    z.write(duong, f'de/{did}/{t["ten"]}')
+            for b in cac_bai:
+                anh = []
+                for t in b['trang']:
+                    duong = os.path.join(tm_bai(did, b['id']), t['ten'])
+                    if os.path.isfile(duong):
+                        z.write(duong, f'anh/{b["id"]}/{t["ten"]}')
+                        anh.append(f'anh/{b["id"]}/{t["ten"]}')
+                ai = json.loads(json.dumps(b.get('ket_qua'))) if b.get('trang_thai') == 'xong' else None
+                if an_danh:
+                    hs = 'HS_' + hashlib.sha1((did + b['id']).encode()).hexdigest()[:8]
+                    if ai:
+                        ai['hoten_tren_bai'] = ''
+                else:
+                    hs = b.get('hoten', '')
+                mau.append({'de_id': did, 'mon': de.get('mon'), 'bai_id': b['id'], 'hoc_sinh': hs,
+                            'anh': anh, 'ai': ai,
+                            'mo_hinh_ai': (b.get('thong_ke') or {}).get('mo_hinh') if ai else None,
+                            'giao_vien': b['duyet']})
+        z.writestr('dulieu.jsonl', '\n'.join(json.dumps(m, ensure_ascii=False) for m in mau))
+        z.writestr('DOC_TRUOC.txt', (
+            'DỮ LIỆU BÀI LÀM ĐÃ ĐƯỢC GIÁO VIÊN DUYỆT ĐIỂM\n'
+            f'Xuất lúc {bay_gio()}. Số bài: {len(mau)}. Ẩn danh: {"có" if an_danh else "KHÔNG"}.\n\n'
+            'dulieu.jsonl: mỗi dòng là một bài.\n'
+            '  anh        : ảnh bài làm (thư mục anh/)\n'
+            '  ai         : kết quả AI chấm (bản chép lại, điểm từng ý, nhận xét)\n'
+            '  giao_vien  : bản giáo viên đã duyệt (bản chép lại đã sửa, điểm, nhận xét) = nhãn đúng\n'
+            'de/: đề, đáp án, thang điểm.\n\n'
+            'LƯU Ý: chế độ ẩn danh chỉ thay họ tên trong dữ liệu. Ảnh bài làm vẫn có thể còn họ tên\n'
+            'học sinh viết trên giấy. Chỉ dùng hoặc chia sẻ dữ liệu này khi đã có sự đồng ý theo\n'
+            'quy định bảo vệ dữ liệu cá nhân (Nghị định 13/2023/NĐ-CP).\n'))
+    return out.getvalue(), len(mau)
 
 
 # ---------------------------------------------------------------- máy chủ web
@@ -477,6 +605,7 @@ class XuLy(BaseHTTPRequestHandler):
         if p == ['api', 'caidat']:
             k = lay_khoa_api()
             return self.json({'co_khoa': bool(k), 'duoi_khoa': k[-4:] if k else '',
+                              'phong_cach': (doc_json(CAU_HINH, {}) or {}).get('phong_cach', ''),
                               'tu_bien_moi_truong': bool(os.environ.get('ANTHROPIC_API_KEY')),
                               'co_thu_vien': anthropic is not None, 'mo_hinh': MO_HINH})
         if p == ['api', 'de']:
@@ -505,6 +634,14 @@ class XuLy(BaseHTTPRequestHandler):
             return self.gui(200, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                             tao_xlsx(bang_ket_qua(p[2])),
                             {'Content-Disposition': "attachment; filename=\"ketqua.xlsx\"; filename*=UTF-8''" + ten_tep})
+        if p == ['api', 'dulieu.zip']:
+            q = parse_qs(urlparse(self.path).query)
+            noi_dung, n = xuat_du_lieu((q.get('de') or [''])[0] or None, (q.get('an_danh') or ['1'])[0] != '0')
+            if not n:
+                raise ValueError('Chưa có bài nào được giáo viên duyệt điểm')
+            ten_tep = f'dulieu_chamtuluan_{datetime.datetime.now():%Y%m%d_%H%M}.zip'
+            return self.gui(200, 'application/zip', noi_dung,
+                            {'Content-Disposition': f'attachment; filename="{ten_tep}"'})
         if len(p) == 5 and p[:2] == ['api', 'tep']:
             # /api/tep/<de>/<bai hoặc "de">/<tên>
             de_id, bai_id, ten = p[2], p[3], p[4]
@@ -528,7 +665,10 @@ class XuLy(BaseHTTPRequestHandler):
             if k and not k.startswith('sk-ant-'):
                 raise ValueError('Khoá API phải bắt đầu bằng sk-ant-')
             ch = doc_json(CAU_HINH, {}) or {}
-            ch['api_key'] = k
+            if k:
+                ch['api_key'] = k
+            if 'phong_cach' in d:
+                ch['phong_cach'] = str(d['phong_cach']).strip()[:5000]
             ghi_json(CAU_HINH, ch)
             return self.json({'ok': True})
         if p == ['api', 'de']:
@@ -538,13 +678,15 @@ class XuLy(BaseHTTPRequestHandler):
         if len(p) == 4 and p[:2] == ['api', 'de'] and p[3] == 'chamtatca':
             n = 0
             for b in ds_bai(p[2]):
-                if b.get('trang_thai') in ('moi', 'loi') or (d.get('cham_lai') and b.get('trang_thai') == 'xong'):
+                if b.get('trang_thai') in ('moi', 'loi') or (d.get('cham_lai') and b.get('trang_thai') == 'xong' and not b.get('duyet')):
                     xep_hang_cham(p[2], b['id'])
                     n += 1
             return self.json({'so_bai': n})
         if len(p) == 5 and p[:2] == ['api', 'bai'] and p[4] == 'cham':
             xep_hang_cham(p[2], an_toan_id(p[3]))
             return self.json({'ok': True})
+        if len(p) == 5 and p[:2] == ['api', 'bai'] and p[4] == 'duyet':
+            return self.json(self.duyet_bai(p[2], an_toan_id(p[3]), d))
         if len(p) == 5 and p[:2] == ['api', 'bai'] and p[4] == 'sua':
             with khoa:
                 b = doc_bai(p[2], an_toan_id(p[3]))
@@ -600,6 +742,44 @@ class XuLy(BaseHTTPRequestHandler):
                 de['tep'].append(luu_tep(thu_muc_tep, 'tep_' + ma_moi(), t))
             ghi_json(os.path.join(tm_de(de_id), 'de.json'), de)
             return de
+
+    def duyet_bai(self, de_id, bai_id, d):
+        with khoa:
+            de = doc_de(de_id)
+            b = doc_bai(de_id, bai_id)
+            if not de or not b:
+                raise ValueError('Không tìm thấy bài')
+            if d.get('bo_duyet'):
+                b.pop('duyet', None)
+                ghi_bai(b)
+                return b
+            cau_de = {chuan_so(c['so']): c for c in de['cau']}
+            ai = {chuan_so(c['so']): c for c in (b.get('ket_qua') or {}).get('cau', [])} \
+                if b.get('trang_thai') == 'xong' else {}
+            cau, co_sua = [], not ai
+            for c in d.get('cau', []):
+                g = cau_de.get(chuan_so(c.get('so', '')))
+                if not g:
+                    continue
+                try:
+                    diem = float(str(c.get('diem', '')).replace(',', '.'))
+                except ValueError:
+                    raise ValueError(f"Điểm câu {g['so']} chưa nhập hoặc không phải là số")
+                if diem < 0 or diem > float(g['diem']) + 1e-9:
+                    raise ValueError(f"Điểm câu {g['so']} phải từ 0 đến {so_vn(g['diem'])}")
+                chep = str(c.get('chep_lai', '')).strip()
+                a = ai.get(chuan_so(g['so']))
+                if not a or abs(float(a['diem']) - diem) > 1e-9 or (a.get('chep_lai') or '').strip() != chep:
+                    co_sua = True
+                cau.append({'so': g['so'], 'toi_da': float(g['diem']), 'diem': round(diem, 2),
+                            'chep_lai': chep, 'nhan_xet': str(c.get('nhan_xet', '')).strip()})
+            if len(cau) != len(de['cau']):
+                raise ValueError('Chưa có điểm cho đủ các câu')
+            b['duyet'] = {'cau': cau, 'tong_diem': round(sum(c['diem'] for c in cau), 2),
+                          'nhan_xet_chung': str(d.get('nhan_xet_chung', '')).strip(),
+                          'lam_mau': bool(d.get('lam_mau', True)), 'co_sua': co_sua, 'luc': bay_gio()}
+            ghi_bai(b)
+            return b
 
     def them_bai(self, de_id, d):
         if not doc_de(de_id):

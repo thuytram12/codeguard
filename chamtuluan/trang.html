@@ -11,19 +11,19 @@
 :root{
   --nen:#f5f6f8; --the:#fff; --chu:#1d2330; --mo:#667085; --vien:#dfe3ea;
   --chinh:#2457c5; --chinh-chu:#fff; --xanh:#16794c; --xanh-nen:#e6f4ec;
-  --vang:#9a6200; --vang-nen:#fff4dc; --do:#b42318; --do-nen:#fdecea; --xam-nen:#eef0f4;
+  --vang:#9a6200; --vang-nen:#fff4dc; --do:#b42318; --do-nen:#fdecea; --xam-nen:#eef0f4; --lam:#175cd3; --lam-nen:#e7efff;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --nen:#14171d; --the:#1c2028; --chu:#e6e9ef; --mo:#9aa3b2; --vien:#2e3440;
     --chinh:#6c97f0; --chinh-chu:#0d1320; --xanh:#5fcf97; --xanh-nen:#173326;
-    --vang:#f0bd5a; --vang-nen:#3a2d12; --do:#f28b82; --do-nen:#3b1c1a; --xam-nen:#252a33;
+    --vang:#f0bd5a; --vang-nen:#3a2d12; --do:#f28b82; --do-nen:#3b1c1a; --xam-nen:#252a33; --lam:#84adff; --lam-nen:#1b2a4a;
   }
 }
 :root[data-theme="dark"]{
   --nen:#14171d; --the:#1c2028; --chu:#e6e9ef; --mo:#9aa3b2; --vien:#2e3440;
   --chinh:#6c97f0; --chinh-chu:#0d1320; --xanh:#5fcf97; --xanh-nen:#173326;
-  --vang:#f0bd5a; --vang-nen:#3a2d12; --do:#f28b82; --do-nen:#3b1c1a; --xam-nen:#252a33;
+  --vang:#f0bd5a; --vang-nen:#3a2d12; --do:#f28b82; --do-nen:#3b1c1a; --xam-nen:#252a33; --lam:#84adff; --lam-nen:#1b2a4a;
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--nen);color:var(--chu);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -67,6 +67,19 @@ tbody tr{cursor:pointer} tbody tr:hover{background:var(--xam-nen)}
 .n-cho{background:var(--xam-nen);color:var(--mo)}
 .n-loi{background:var(--do-nen);color:var(--do)}
 .n-xem{background:var(--vang-nen);color:var(--vang)}
+.n-duyet{background:var(--lam-nen);color:var(--lam)}
+.do-sat{background:var(--xam-nen);border-radius:8px;padding:10px 12px;margin-bottom:12px;font-size:14px}
+.do-sat b{font-variant-numeric:tabular-nums}
+.ai-goc{font-size:13px;color:var(--mo);margin:4px 0 8px}
+.ai-goc .y{font-size:13px}
+.xem-truoc{min-height:24px;padding:6px 10px;border:1px dashed var(--vien);border-radius:6px;margin:4px 0 8px;white-space:pre-wrap;font-size:14px;overflow-x:auto}
+.o-diem{display:flex;gap:10px;align-items:center;margin:6px 0}
+.o-diem input{width:90px}
+.lech{color:var(--do);font-weight:600}
+.thanh-duyet{position:sticky;bottom:-18px;background:var(--the);border-top:1px solid var(--vien);padding:12px 0 4px;margin-top:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.thanh-duyet .tong{margin-right:auto}
+.chk{display:flex;gap:6px;align-items:center;font-size:14px;color:var(--chu);margin:0}
+.chk input{width:auto}
 .tong{font-weight:700;font-size:16px}
 .phu{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;z-index:20;padding:20px 12px;overflow:auto}
 .phu.mo-ra{display:block}
@@ -97,7 +110,7 @@ tbody tr{cursor:pointer} tbody tr:hover{background:var(--xam-nen)}
 </header>
 <main id="noi"></main>
 
-<div class="phu" id="phu" onclick="if(event.target===this)dongPhu()"><div class="hop" id="hop"></div></div>
+<div class="phu" id="phu" onclick="if(event.target===this)dongPhuHoi()"><div class="hop" id="hop"></div></div>
 <div class="thong-bao" id="tb"></div>
 
 <script>
@@ -132,14 +145,16 @@ async function moCaiDat() {
     <b>console.anthropic.com</b> → API Keys. Khoá chỉ lưu trên máy này, trong tệp <code>cauhinh.json</code>.</p>
     ${c.tu_bien_moi_truong ? '<p class="canh-bao">Đang dùng khoá từ biến môi trường ANTHROPIC_API_KEY.</p>' : ''}
     <label>Khoá API ${c.co_khoa ? '(đang có khoá …' + esc(c.duoi_khoa) + ')' : ''}</label>
-    <input id="oKhoa" type="password" placeholder="sk-ant-..." autocomplete="off">
+    <input id="oKhoa" type="password" placeholder="${c.co_khoa ? 'Để trống nếu giữ khoá cũ' : 'sk-ant-...'}" autocomplete="off">
+    <label style="margin-top:14px">Thói quen chấm của tôi (áp dụng cho mọi đề, không bắt buộc)</label>
+    <textarea id="oPhongCach" style="min-height:90px" placeholder="VD: Thiếu điều kiện xác định trừ 0,25đ. Không trừ điểm khi học sinh viết tắt 'pt', 'nghiệm'. Kết quả đúng nhưng không kết luận: trừ 0,25đ.">${esc(c.phong_cach)}</textarea>
     <div class="hang" style="margin-top:14px;justify-content:flex-end">
       <button class="hep" onclick="dongPhu()">Đóng</button>
       <button class="hep chinh" onclick="luuKhoa()">Lưu</button>
     </div>`, true);
 }
 async function luuKhoa() {
-  try { await api('/api/caidat', {method: 'POST', body: {api_key: $('#oKhoa').value}}); dongPhu(); thongBao('Đã lưu khoá API'); kiemTraKhoa(); }
+  try { await api('/api/caidat', {method: 'POST', body: {api_key: $('#oKhoa').value, phong_cach: $('#oPhongCach').value}}); dongPhu(); thongBao('Đã lưu cài đặt'); kiemTraKhoa(); }
   catch (e) { alert(e.message); }
 }
 
@@ -150,6 +165,7 @@ async function veTrangChu() {
   $('#noi').innerHTML = `
     <div class="hang" style="margin-bottom:16px;align-items:center">
       <h2 style="margin:0">Các đề kiểm tra</h2>
+      <button class="hep" onclick="moXuatDuLieu('')">⬇ Dữ liệu đã duyệt</button>
       <button class="hep chinh" onclick="moDe(null)">+ Tạo đề mới</button>
     </div>
     ${ds.length ? '<div class="ds-de">' + ds.map(d => `
@@ -304,8 +320,11 @@ function veBai() {
       <div class="hang" style="align-items:center;margin-bottom:10px">
         <h3 style="margin:0">Kết quả <span class="mo" id="demBai"></span></h3>
         <button class="hep" onclick="chamTatCa(false)">▶ Chấm bài chưa chấm</button>
+        <button class="hep" onclick="if(confirm('Chấm lại bằng AI tất cả bài CHƯA được giáo viên duyệt? (Dùng khi vừa sửa đáp án hoặc vừa có thêm bài mẫu)'))chamTatCa(true)">↻ Chấm lại bài chưa duyệt</button>
+        <button class="hep" onclick="moXuatDuLieu('${d.id}')">⬇ Dữ liệu đã duyệt</button>
         <a class="hep nut chinh" href="/api/de/${d.id}/ketqua.xlsx">⬇ Tải Excel</a>
       </div>
+      <div id="doSat"></div>
       <div class="cuon" id="bangKq"></div>
     </div>`;
   const v = $('#vungTai');
@@ -314,23 +333,48 @@ function veBai() {
   v.ondrop = e => { e.preventDefault(); v.classList.remove('keo'); taiBai(e.dataTransfer.files); };
   veBang();
 }
+const kqCuoi = b => b.duyet || (b.trang_thai === 'xong' ? b.ket_qua : null);
+const chuanSo = x => String(x).trim().toLowerCase().replace(/^(câu|cau|bài|bai)\s*/, '').replace(/[\s.:)]+$/, '').replace(/ /g, '');
 function nhanTrangThai(b) {
   const kq = b.ket_qua;
-  if (b.trang_thai === 'xong') return kq && kq.can_xem_lai ? '<span class="nhan n-xem">Nên xem lại</span>' : '<span class="nhan n-xong">Đã chấm</span>';
+  if (b.duyet) return '<span class="nhan n-duyet">✔ GV đã duyệt</span>' + (['cho_cham', 'dang_cham'].includes(b.trang_thai) ? ' <span class="nhan n-cho">⏳</span>' : '');
+  if (b.trang_thai === 'xong') return kq && kq.can_xem_lai ? '<span class="nhan n-xem">Nên xem lại</span>' : '<span class="nhan n-xong">AI đã chấm</span>';
   if (b.trang_thai === 'loi') return '<span class="nhan n-loi">Lỗi</span>';
   if (b.trang_thai === 'dang_cham') return '<span class="nhan n-cho">⏳ Đang chấm…</span>';
   if (b.trang_thai === 'cho_cham') return '<span class="nhan n-cho">Đang chờ</span>';
   return '<span class="nhan n-cho">Chưa chấm</span>';
 }
-function diemCau(b, s) {
-  const c = (b.ket_qua?.cau || []).find(x => String(x.so).trim().toLowerCase() === String(s).trim().toLowerCase());
-  return c ? so(c.diem) : '';
+function timCau(kq, s) { return (kq?.cau || []).find(x => chuanSo(x.so) === chuanSo(s)); }
+function diemCau(b, s) { const c = timCau(kqCuoi(b), s); return c ? so(c.diem) : ''; }
+function thongKeDoSat(d) {
+  // So điểm AI với điểm giáo viên trên các bài GV đã duyệt mà AI cũng đã chấm.
+  const bs = d.bai.filter(b => b.duyet && b.trang_thai === 'xong' && b.ket_qua);
+  if (!bs.length) return '';
+  let lechTong = 0, soCau = 0, cauKhop = 0, baiSat = 0; const lechCau = {};
+  for (const b of bs) {
+    lechTong += Math.abs(b.ket_qua.tong_diem - b.duyet.tong_diem);
+    if (Math.abs(b.ket_qua.tong_diem - b.duyet.tong_diem) <= 0.25 + 1e-9) baiSat++;
+    for (const c of b.duyet.cau) {
+      const a = timCau(b.ket_qua, c.so); if (!a) continue;
+      const l = Math.abs(a.diem - c.diem); soCau++; if (l < 1e-9) cauKhop++;
+      lechCau[c.so] = (lechCau[c.so] || 0) + l;
+    }
+  }
+  const te = Object.entries(lechCau).sort((x, y) => y[1] - x[1])[0];
+  const mau = d.bai.filter(b => b.duyet && b.duyet.lam_mau !== false).length;
+  return `<div class="do-sat">📊 <b>AI so với giáo viên</b> (trên ${bs.length} bài đã duyệt):
+    lệch trung bình <b>${so(lechTong / bs.length)}</b> điểm/bài ·
+    <b>${Math.round(100 * baiSat / bs.length)}%</b> bài lệch không quá 0,25 ·
+    <b>${soCau ? Math.round(100 * cauKhop / soCau) : 0}%</b> câu trùng điểm
+    ${te && te[1] > 0 ? ` · lệch nhiều nhất ở <b>Câu ${esc(te[0])}</b>` : ''}
+    <div class="mo">AI dùng tối đa 4 bài mẫu khi chấm bài mới. Hiện có ${mau} bài được phép làm mẫu.</div></div>`;
 }
 function veBang() {
   const d = deHienTai, bs = d.bai;
-  const xong = bs.filter(b => b.trang_thai === 'xong');
-  const tb = xong.length ? xong.reduce((s, b) => s + b.ket_qua.tong_diem, 0) / xong.length : null;
-  $('#demBai').textContent = `· ${xong.length}/${bs.length} bài đã chấm` + (tb != null ? ` · điểm trung bình ${so(tb)}` : '');
+  const coDiem = bs.filter(b => kqCuoi(b)), duyet = bs.filter(b => b.duyet).length;
+  const tb = coDiem.length ? coDiem.reduce((s, b) => s + kqCuoi(b).tong_diem, 0) / coDiem.length : null;
+  $('#demBai').textContent = `· ${coDiem.length}/${bs.length} bài có điểm · ${duyet} bài GV đã duyệt` + (tb != null ? ` · điểm trung bình ${so(tb)}` : '');
+  $('#doSat').innerHTML = thongKeDoSat(d);
   $('#bangKq').innerHTML = !bs.length ? '<p class="mo">Chưa có bài nào.</p>' : `
     <table><thead><tr><th class="so">#</th><th>Học sinh</th><th>Trạng thái</th>
       ${d.cau.map(c => `<th class="so">Câu ${esc(c.so)}<br><span class="mo">/${so(c.diem)}</span></th>`).join('')}
@@ -338,7 +382,7 @@ function veBang() {
     <tbody>${bs.map((b, i) => `<tr onclick="moBai('${b.id}')">
       <td class="so">${i + 1}</td><td>${esc(b.hoten) || '<span class="mo">(chưa rõ tên)</span>'}</td><td>${nhanTrangThai(b)}</td>
       ${d.cau.map(c => `<td class="so">${diemCau(b, c.so)}</td>`).join('')}
-      <td class="so tong">${b.trang_thai === 'xong' ? so(b.ket_qua.tong_diem) : ''}</td></tr>`).join('')}</tbody></table>`;
+      <td class="so tong">${kqCuoi(b) ? so(kqCuoi(b).tong_diem) : ''}</td></tr>`).join('')}</tbody></table>`;
   clearTimeout(hen);
   if (bs.some(b => ['cho_cham', 'dang_cham'].includes(b.trang_thai))) hen = setTimeout(lamMoi, 3000);
 }
@@ -347,7 +391,7 @@ async function lamMoi() {
   try {
     deHienTai = await api('/api/de/' + deHienTai.id);
     if (tabHienTai === 'bai' && $('#bangKq')) veBang();
-    const id = $('#hop')?.dataset.bai; if (id && $('#phu').classList.contains('mo-ra')) { const b = deHienTai.bai.find(x => x.id === id); if (b && b.trang_thai !== $('#hop').dataset.tt) moBai(id); }
+    const id = $('#hop')?.dataset.bai; if (id && $('#phu').classList.contains('mo-ra')) { const b = deHienTai.bai.find(x => x.id === id); if (b && b.trang_thai !== $('#hop').dataset.tt && !dangSua) moBai(id); }
   } catch (e) { hen = setTimeout(lamMoi, 5000); }
 }
 async function taiBai(files) {
@@ -371,48 +415,131 @@ async function chamTatCa(lai) {
   thongBao(r.so_bai ? `Đã đưa ${r.so_bai} bài vào hàng chấm` : 'Không có bài nào cần chấm'); lamMoi();
 }
 
-// ---- chi tiết một bài
+// ---- chi tiết một bài: xem kết quả AI, sửa và duyệt điểm
+let dangSua = false;
 function moBai(id) {
+  dangSua = false;
   const d = deHienTai, b = d.bai.find(x => x.id === id); if (!b) return;
-  const kq = b.ket_qua;
+  const ai = b.trang_thai === 'xong' ? b.ket_qua : null, gv = b.duyet;
   const anh = b.trang.map((t, i) => t.mime === 'application/pdf'
     ? `<p><a class="nut" href="/api/tep/${d.id}/${b.id}/${t.ten}" target="_blank">📄 Mở PDF trang ${i + 1}</a></p>`
     : `<img src="/api/tep/${d.id}/${b.id}/${t.ten}" alt="Trang ${i + 1}" onclick="window.open(this.src)">`).join('');
+  const choCham = ['cho_cham', 'dang_cham'].includes(b.trang_thai);
   let phai = '';
-  if (b.trang_thai === 'loi') phai = `<div class="loi">${esc(b.loi)}</div>`;
-  else if (b.trang_thai !== 'xong') phai = `<p class="mo">${nhanTrangThai(b)} Kết quả sẽ hiện ở đây khi AI chấm xong.</p>`;
-  else {
-    phai = (kq.can_xem_lai ? `<div class="canh-bao">⚠ <b>Nên xem lại:</b> ${esc(kq.can_xem_lai)}</div>` : '') + `
-      <div class="hang" style="align-items:center;margin-bottom:10px">
-        <div class="tong" style="font-size:22px">${so(kq.tong_diem)} / ${so(d.tong)} điểm</div>
-        <div class="mo hep">Độ tin cậy: ${({cao: 'cao', trung_binh: 'trung bình', thap: 'thấp'})[kq.do_tin_cay] || ''}</div>
-      </div>
-      ${kq.cau.map(c => `<div class="kq-cau">
-        <div class="dau"><b>Câu ${esc(c.so)}</b><b>${so(c.diem)}${c.toi_da != null ? ' / ' + so(c.toi_da) : ''}</b></div>
-        <div class="mo">Học sinh viết:</div><div class="chep">${esc(c.chep_lai) || '<i>(bỏ trống)</i>'}</div>
-        ${(c.cac_y || []).map(y => `<div class="y"><b>${esc(y.y)}</b> — ${so(y.diem)}/${so(y.toi_da)}. ${esc(y.nhan_xet)}</div>`).join('')}
-        <p style="margin:6px 0 0">${esc(c.nhan_xet)}</p></div>`).join('')}
-      <h3>Nhận xét chung</h3><p>${esc(kq.nhan_xet_chung)}</p>
-      <p class="mo">Chấm lúc ${esc(b.cham_luc)} · ${b.thong_ke ? esc(b.thong_ke.giay) + ' giây' : ''}</p>`;
+  if (b.trang_thai === 'loi') phai += `<div class="loi">${esc(b.loi)}<br>Thầy/cô có thể chấm tay ở bên dưới.</div>`;
+  if (choCham) phai += `<p class="mo">${nhanTrangThai(b)} AI đang chấm, kết quả sẽ hiện khi xong.</p>`;
+  if (ai || gv || b.trang_thai === 'loi') {
+    if (gv) phai += `<div class="do-sat">✔ <b>Giáo viên đã duyệt</b> lúc ${esc(gv.luc)}${gv.lam_mau !== false ? ' · đang dùng làm bài mẫu cho AI' : ''}</div>`;
+    if (ai && ai.can_xem_lai && !gv) phai += `<div class="canh-bao">⚠ <b>AI đề nghị xem lại:</b> ${esc(ai.can_xem_lai)}</div>`;
+    if (ai) phai += `<div class="mo" style="margin-bottom:8px">AI chấm: <b>${so(ai.tong_diem)}/${so(d.tong)}</b> · độ tin cậy ${({cao: 'cao', trung_binh: 'trung bình', thap: 'thấp'})[ai.do_tin_cay] || ''}${ai.so_bai_mau ? ' · có dùng ' + ai.so_bai_mau + ' bài mẫu' : ''}</div>`;
+    phai += d.cau.map(cd => {
+      const a = timCau(ai, cd.so), g = timCau(gv, cd.so), dang = g || a || {};
+      return `<div class="kq-cau" data-so="${esc(cd.so)}">
+        <div class="dau"><b>Câu ${esc(cd.so)}</b><span class="mo">tối đa ${so(cd.diem)}</span></div>
+        ${a ? `<div class="ai-goc">🤖 AI cho <b>${so(a.diem)}</b>. ${esc(a.nhan_xet)}
+          ${(a.cac_y || []).map(y => `<div class="y">${esc(y.y)}: ${so(y.diem)}/${so(y.toi_da)}. ${esc(y.nhan_xet)}</div>`).join('')}</div>` : ''}
+        <label>Bài làm học sinh (TeX, sửa nếu AI đọc sai)</label>
+        <textarea class="dChep" oninput="suaDoi(this)">${esc(dang.chep_lai)}</textarea>
+        <div class="xem-truoc">${esc(dang.chep_lai)}</div>
+        <div class="o-diem"><label style="margin:0">Điểm</label>
+          <input class="dDiem" inputmode="decimal" value="${dang.diem != null ? so(dang.diem) : ''}" oninput="suaDoi(this)" placeholder="0">
+          <span class="mo">/ ${so(cd.diem)}</span><span class="lechAi"></span></div>
+        <label>Nhận xét</label>
+        <textarea class="dNx" style="min-height:50px;font-family:inherit" oninput="suaDoi(this)">${esc(dang.nhan_xet)}</textarea>
+      </div>`;
+    }).join('') + `
+      <label>Nhận xét chung</label>
+      <textarea id="dNxChung" style="min-height:60px;font-family:inherit" oninput="suaDoi(this)">${esc((gv || ai || {}).nhan_xet_chung)}</textarea>
+      <div class="thanh-duyet">
+        <span class="tong" id="tongGv"></span>
+        <label class="chk"><input type="checkbox" id="dMau" ${!gv || gv.lam_mau !== false ? 'checked' : ''}> Dùng làm bài mẫu cho AI</label>
+        ${gv ? `<button onclick="boDuyet('${b.id}')">Bỏ duyệt</button>` : ''}
+        <button class="chinh" onclick="duyetBai('${b.id}')">✔ ${gv ? 'Lưu lại' : 'Xác nhận điểm'}</button>
+      </div>`;
   }
   moPhu(`<div class="hang" style="align-items:flex-end;margin-bottom:14px">
       <div style="flex:2"><label>Họ tên học sinh</label><input id="bTen" value="${esc(b.hoten)}" onchange="doiTen('${b.id}', this.value)"></div>
-      <button class="hep" onclick="chamLai('${b.id}')" ${['cho_cham', 'dang_cham'].includes(b.trang_thai) ? 'disabled' : ''}>↻ Chấm lại</button>
+      <button class="hep" onclick="chamLai('${b.id}')" ${choCham ? 'disabled' : ''} title="AI chấm lại. Điểm giáo viên đã duyệt (nếu có) được giữ nguyên.">↻ AI chấm lại</button>
       <button class="hep nguyhiem" onclick="xoaBai('${b.id}')">Xoá bài</button>
-      <button class="hep" onclick="dongPhu()">Đóng ✕</button>
+      <button class="hep" onclick="dongPhuHoi()">Đóng ✕</button>
     </div>
     <div class="chi-tiet"><div class="anh-bai">${anh}</div><div id="kqBai">${phai}</div></div>`);
   $('#hop').dataset.bai = id; $('#hop').dataset.tt = b.trang_thai;
-  toan($('#kqBai'));
+  toan($('#kqBai')); capNhatTong();
+}
+let henXem;
+function suaDoi(el) {
+  dangSua = true;
+  if (el.classList.contains('dChep')) {
+    clearTimeout(henXem);
+    henXem = setTimeout(() => { const x = el.nextElementSibling; x.textContent = el.value; toan(x); }, 400);
+  }
+  if (el.classList.contains('dDiem')) capNhatTong();
+}
+function docDiem(v) { v = String(v).trim().replace(',', '.'); return v === '' || isNaN(+v) ? null : +v; }
+function capNhatTong() {
+  const b = deHienTai.bai.find(x => x.id === $('#hop').dataset.bai), ai = b?.trang_thai === 'xong' ? b.ket_qua : null;
+  let t = 0, du = true;
+  document.querySelectorAll('#kqBai .kq-cau').forEach(e => {
+    const v = docDiem(e.querySelector('.dDiem').value), cd = deHienTai.cau.find(c => c.so === e.dataset.so), a = timCau(ai, e.dataset.so);
+    if (v == null) du = false; else t += v;
+    const l = e.querySelector('.lechAi');
+    l.className = 'lechAi' + (a && v != null && Math.abs(a.diem - v) > 1e-9 ? ' lech' : '');
+    l.textContent = v != null && v > cd.diem ? '⚠ vượt điểm tối đa' : (a && v != null && Math.abs(a.diem - v) > 1e-9 ? `(AI: ${so(a.diem)})` : '');
+  });
+  if ($('#tongGv')) $('#tongGv').textContent = du ? `Tổng: ${so(t)} / ${so(deHienTai.tong)}` : 'Tổng: chưa đủ điểm các câu';
+}
+async function duyetBai(id) {
+  const cau = [...document.querySelectorAll('#kqBai .kq-cau')].map(e => ({
+    so: e.dataset.so, diem: e.querySelector('.dDiem').value,
+    chep_lai: e.querySelector('.dChep').value, nhan_xet: e.querySelector('.dNx').value}));
+  try {
+    await api(`/api/bai/${deHienTai.id}/${id}/duyet`, {method: 'POST', body: {cau, nhan_xet_chung: $('#dNxChung').value, lam_mau: $('#dMau').checked}});
+    dangSua = false; thongBao('Đã duyệt điểm'); await lamMoi();
+    // mở bài tiếp theo chưa duyệt để duyệt liên tục
+    const tiep = deHienTai.bai.find(x => !x.duyet && x.trang_thai === 'xong');
+    tiep ? moBai(tiep.id) : (dongPhu(), thongBao('Đã duyệt hết các bài AI đã chấm'));
+  } catch (e) { alert(e.message); }
+}
+async function boDuyet(id) {
+  if (!confirm('Bỏ duyệt bài này? Điểm sẽ trở về điểm AI chấm.')) return;
+  await api(`/api/bai/${deHienTai.id}/${id}/duyet`, {method: 'POST', body: {bo_duyet: true}});
+  dangSua = false; await lamMoi(); moBai(id);
 }
 async function doiTen(id, ten) { await api(`/api/bai/${deHienTai.id}/${id}/sua`, {method: 'POST', body: {hoten: ten}}); thongBao('Đã đổi tên'); lamMoi(); }
-async function chamLai(id) { await api(`/api/bai/${deHienTai.id}/${id}/cham`, {method: 'POST', body: {}}); dongPhu(); thongBao('Đã đưa vào hàng chấm'); lamMoi(); }
+async function chamLai(id) {
+  if (dangSua && !confirm('Bỏ các chỗ đang sửa dở?')) return;
+  await api(`/api/bai/${deHienTai.id}/${id}/cham`, {method: 'POST', body: {}}); dangSua = false; dongPhu(); thongBao('Đã đưa vào hàng chấm'); lamMoi();
+}
 async function xoaBai(id) {
   if (!confirm('Xoá bài làm này?')) return;
-  try { await api(`/api/bai/${deHienTai.id}/${id}`, {method: 'DELETE'}); dongPhu(); lamMoi(); } catch (e) { alert(e.message); }
+  try { await api(`/api/bai/${deHienTai.id}/${id}`, {method: 'DELETE'}); dangSua = false; dongPhu(); lamMoi(); } catch (e) { alert(e.message); }
+}
+function dongPhuHoi() { if (dangSua && !confirm('Đóng mà không lưu các chỗ đang sửa?')) return; dangSua = false; dongPhu(); }
+
+// ---- xuất dữ liệu đã duyệt
+function moXuatDuLieu(deId) {
+  moPhu(`<h2>Xuất dữ liệu đã duyệt</h2>
+    <p>Gói tất cả bài <b>giáo viên đã duyệt điểm</b> ${deId ? 'của đề này' : 'của mọi đề'} thành một tệp zip, gồm ảnh bài làm,
+    kết quả AI chấm và điểm giáo viên. Dùng để đo độ chính xác của AI, hoặc sau này để huấn luyện AI chấm riêng.</p>
+    <label class="chk"><input type="checkbox" id="xAnDanh" checked> Ẩn danh (thay họ tên bằng mã)</label>
+    <p class="canh-bao" style="margin-top:12px">Ảnh bài làm vẫn có thể còn họ tên học sinh viết trên giấy. Chỉ chia sẻ dữ liệu này khi đã có
+    sự đồng ý theo quy định bảo vệ dữ liệu cá nhân (Nghị định 13/2023/NĐ-CP).</p>
+    <div class="hang" style="justify-content:flex-end">
+      <button class="hep" onclick="dongPhu()">Đóng</button>
+      <button class="hep chinh" onclick="taiDuLieu('${deId}')">⬇ Tải về</button>
+    </div>`, true);
+}
+async function taiDuLieu(deId) {
+  const url = `/api/dulieu.zip?de=${deId}&an_danh=${$('#xAnDanh').checked ? 1 : 0}`;
+  const r = await fetch(url);
+  if (!r.ok) return alert((await r.json().catch(() => ({}))).loi || 'Lỗi tải dữ liệu');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(await r.blob());
+  a.download = (r.headers.get('Content-Disposition') || '').match(/filename="([^"]+)"/)?.[1] || 'dulieu.zip';
+  a.click(); dongPhu();
 }
 
-document.addEventListener('keydown', e => { if (e.key === 'Escape') dongPhu(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#phu').classList.contains('mo-ra')) dongPhuHoi(); });
 kiemTraKhoa();
 location.hash.length === 11 ? moDe(location.hash.slice(1)).catch(veTrangChu) : veTrangChu();
 </script>
