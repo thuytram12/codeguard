@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CodeGuard – Giám sát phòng thi</title>
+<style>
+  :root {
+    --nen: #f2f5f9; --the: #ffffff; --chu: #1b2430; --phu: #5c6b7c; --vien: #dfe5ec;
+    --chinh: #0b4f9c; --chinh-nhat: #e7f0fb;
+    --xanh: #1a8f45; --xanh-nhat: #e3f5ea;
+    --do: #c62828; --do-nhat: #fde7e7;
+    --vang: #a86600; --vang-nhat: #fff3dc;
+    --xam: #6b7785; --xam-nhat: #eef1f4;
+    --tim: #6a3fb5; --tim-nhat: #efe8fb;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --nen: #11161d; --the: #1a212b; --chu: #e6ebf1; --phu: #9aa7b5; --vien: #2b3542;
+      --chinh: #6aa8f0; --chinh-nhat: #1d2d44;
+      --xanh: #4cc27a; --xanh-nhat: #173226;
+      --do: #ff6b6b; --do-nhat: #3a1c1f;
+      --vang: #f0b44c; --vang-nhat: #3a2d14;
+      --xam: #9aa7b5; --xam-nhat: #242d38;
+      --tim: #b394f0; --tim-nhat: #2b2340;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--nen); color: var(--chu);
+         font: 14px/1.45 "Segoe UI", system-ui, Arial, sans-serif; }
+  header { background: var(--the); border-bottom: 1px solid var(--vien); padding: 12px 20px;
+           display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; position: sticky; top: 0; z-index: 5; }
+  header h1 { font-size: 18px; margin: 0; color: var(--chinh); }
+  .buoi { font-weight: 700; padding: 4px 12px; border-radius: 999px; font-size: 13px; }
+  .buoi.cho { background: var(--vang-nhat); color: var(--vang); }
+  .buoi.dang_thi { background: var(--xanh-nhat); color: var(--xanh); }
+  .buoi.ket_thuc { background: var(--xam-nhat); color: var(--xam); }
+  .dongho { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 16px; }
+  .gian { flex: 1; }
+  button, .nut { font: inherit; border: 1px solid var(--vien); background: var(--the); color: var(--chu);
+                 padding: 7px 12px; border-radius: 8px; cursor: pointer; text-decoration: none; white-space: nowrap; }
+  button:hover, .nut:hover { border-color: var(--chinh); }
+  button.chinh { background: var(--chinh); border-color: var(--chinh); color: #fff; font-weight: 700; }
+  button.do { background: var(--do); border-color: var(--do); color: #fff; font-weight: 700; }
+  button:disabled { opacity: .45; cursor: default; }
+  main { padding: 16px 20px 40px; max-width: 1500px; margin: 0 auto; }
+  .dai { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; background: var(--chinh-nhat);
+         border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; }
+  .dai b.ip { font-size: 18px; color: var(--chinh); letter-spacing: .5px; }
+  .dai input { font: inherit; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--vien);
+               background: var(--the); color: var(--chu); width: 340px; max-width: 100%; }
+  .so { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .o { background: var(--the); border: 1px solid var(--vien); border-radius: 10px; padding: 10px 14px; }
+  .o .n { font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .o .l { color: var(--phu); font-size: 12.5px; }
+  .o.xanh .n { color: var(--xanh); } .o.do .n { color: var(--do); } .o.vang .n { color: var(--vang); }
+  .o.xam .n { color: var(--xam); } .o.tim .n { color: var(--tim); }
+  .luoi { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
+  .khung { background: var(--the); border: 1px solid var(--vien); border-radius: 10px; overflow: hidden; }
+  .khung h2 { font-size: 14px; margin: 0; padding: 10px 14px; border-bottom: 1px solid var(--vien);
+              display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .khung h2 .gian { flex: 1; }
+  .khung h2 input[type=search] { font: inherit; font-weight: 400; padding: 5px 10px; border-radius: 8px;
+              border: 1px solid var(--vien); background: var(--nen); color: var(--chu); width: 180px; }
+  .khung h2 label { font-weight: 400; color: var(--phu); font-size: 13px; }
+  .cuon { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; }
+  th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--vien); vertical-align: top; }
+  th { font-size: 12px; color: var(--phu); font-weight: 600; background: var(--nen); white-space: nowrap; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover td { background: var(--chinh-nhat); }
+  tr.vi_pham td { background: var(--do-nhat); }
+  td.so-vp { font-weight: 800; font-variant-numeric: tabular-nums; text-align: center; }
+  td.so-vp.co { color: var(--do); }
+  td.nho { color: var(--phu); font-size: 12.5px; white-space: nowrap; }
+  .the-tt { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .tt-dang_lam { background: var(--xanh-nhat); color: var(--xanh); }
+  .tt-vi_pham { background: var(--do); color: #fff; }
+  .tt-mat_tin_hieu { background: var(--vang-nhat); color: var(--vang); }
+  .tt-da_tat { background: var(--tim-nhat); color: var(--tim); }
+  .tt-chua_vao, .tt-xong { background: var(--xam-nhat); color: var(--xam); }
+  .tt-cho { background: var(--chinh-nhat); color: var(--chinh); }
+  .dang-mo { max-width: 340px; }
+  .dang-mo .td { color: var(--phu); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 340px; }
+  .sai { color: var(--do); font-weight: 600; }
+  .dung { color: var(--xanh); }
+  .co-canh-bao { color: var(--tim); font-size: 12px; font-weight: 700; }
+  .feed { max-height: 70vh; overflow-y: auto; }
+  .sk { padding: 8px 14px; border-bottom: 1px solid var(--vien); font-size: 13px; }
+  .sk .g { color: var(--phu); font-variant-numeric: tabular-nums; font-size: 12px; }
+  .sk .ten { font-weight: 700; }
+  .sk.vi_pham { border-left: 4px solid var(--do); }
+  .sk.mat_tin_hieu { border-left: 4px solid var(--vang); }
+  .sk.tat, .sk.canh_bao { border-left: 4px solid var(--tim); }
+  .sk.vao, .sk.co_tin_hieu { border-left: 4px solid var(--xanh); }
+  .sk.he_thong { border-left: 4px solid var(--xam); }
+  .trong { padding: 24px 14px; color: var(--phu); text-align: center; }
+  dialog { border: 1px solid var(--vien); border-radius: 12px; padding: 0; width: min(820px, calc(100vw - 32px));
+           background: var(--the); color: var(--chu); }
+  dialog::backdrop { background: rgba(0,0,0,.4); }
+  dialog .dau { padding: 14px 18px; border-bottom: 1px solid var(--vien); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  dialog .dau h3 { margin: 0; font-size: 17px; flex: 1; }
+  dialog .than { padding: 12px 18px 18px; max-height: 65vh; overflow-y: auto; }
+  dialog .tt-may { color: var(--phu); font-size: 13px; margin-bottom: 10px; }
+  .thongbao { position: fixed; right: 16px; bottom: 16px; background: var(--chu); color: var(--the); padding: 10px 16px;
+              border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 420px; z-index: 20; }
+  .thongbao.hien { opacity: .95; }
+  .mat-ket-noi { display: none; background: var(--do); color: #fff; padding: 8px 20px; font-weight: 700; }
+  @media (max-width: 1100px) { .luoi { grid-template-columns: minmax(0, 1fr); } .so { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  @media (max-width: 600px) { header, main { padding-left: 16px; padding-right: 16px; } .so { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media print { header button, .dai, .feed-khung, .mat-ket-noi { display: none !important; } .luoi { display: block; } }
+</style>
+</head>
+<body>
+<div class="mat-ket-noi" id="matKetNoi">Mất liên lạc với chương trình máy thầy. Kiểm tra cửa sổ đen "maythay.py" còn mở không.</div>
+<header>
+  <h1>CodeGuard – Giám sát phòng thi</h1>
+  <span class="buoi cho" id="buoi">Chờ bắt đầu</span>
+  <span class="dongho" id="dongHo"></span>
+  <span class="gian"></span>
+  <button class="chinh" id="nutBatDau">▶ Bắt đầu buổi thi</button>
+  <button class="do" id="nutKetThuc">■ Kết thúc</button>
+  <button id="nutBuoiMoi" title="Lưu kết quả buổi cũ và bắt đầu buổi mới">Buổi thi mới</button>
+  <a class="nut" href="/inma" target="_blank">🖨 In mã vào bài</a>
+  <a class="nut" href="/xuat/tonghop.csv">⬇ Tổng hợp (Excel)</a>
+  <a class="nut" href="/xuat/nhatky.csv">⬇ Nhật ký (Excel)</a>
+</header>
+<main>
+  <div class="dai">
+    <span>Học sinh gõ địa chỉ máy thầy: <b class="ip" id="ip">…</b></span>
+    <span>Tải chương trình giám sát: <b id="linkTai">…</b></span>
+    <span class="gian"></span>
+    <label>Link kỳ thi VNOJ: <input id="link" placeholder="https://oj.vnoi.info/contest/..."></label>
+    <button id="nutLink">Lưu link</button>
+    <button id="nutQuyDinh" title="Đọc lại file quydinh.json sau khi thầy sửa">Tải lại quy định</button>
+    <button id="nutMaMoi" title="Tạo lại toàn bộ mã vào bài (chỉ khi không trong giờ thi)">Tạo mã mới</button>
+  </div>
+
+  <div class="so">
+    <div class="o"><div class="n" id="sTong">0</div><div class="l">Học sinh trong danh sách</div></div>
+    <div class="o xanh"><div class="n" id="sDangLam">0</div><div class="l">Đang làm bài bình thường</div></div>
+    <div class="o do"><div class="n" id="sViPham">0</div><div class="l">Đang vi phạm ngay lúc này</div></div>
+    <div class="o vang"><div class="n" id="sMat">0</div><div class="l">Mất tín hiệu / tự đóng</div></div>
+    <div class="o xam"><div class="n" id="sChua">0</div><div class="l">Chưa vào</div></div>
+    <div class="o tim"><div class="n" id="sTongVP">0</div><div class="l">Tổng lượt vi phạm</div></div>
+  </div>
+
+  <div class="luoi">
+    <section class="khung">
+      <h2>Học sinh
+        <span class="gian"></span>
+        <input type="search" id="tim" placeholder="Tìm tên…">
+        <label><input type="checkbox" id="xepVP"> Xếp vi phạm lên đầu</label>
+        <label><input type="checkbox" id="amThanh"> Kêu khi có vi phạm</label>
+      </h2>
+      <div class="cuon">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Họ tên</th><th>Trạng thái</th><th>Đang mở</th>
+            <th title="Số lần vi phạm">Vi phạm</th><th>Thời gian VP</th><th title="Số lần mất tín hiệu">Mất TH</th>
+            <th>Máy</th><th>Vào lúc</th><th>Tín hiệu cuối</th>
+          </tr></thead>
+          <tbody id="bang"></tbody>
+        </table>
+      </div>
+    </section>
+    <section class="khung feed-khung">
+      <h2>Diễn biến mới nhất</h2>
+      <div class="feed" id="feed"><div class="trong">Chưa có gì.</div></div>
+    </section>
+  </div>
+</main>
+
+<dialog id="hop">
+  <div class="dau">
+    <h3 id="hopTen"></h3>
+    <button id="nutDatLai" title="Dùng khi em đổi máy hoặc bị báo 'tên đang dùng trên máy khác'">Cho đăng nhập lại</button>
+    <button id="nutDong">Đóng</button>
+  </div>
+  <div class="than">
+    <div class="tt-may" id="hopMay"></div>
+    <table><thead><tr><th>Thời gian</th><th>Loại</th><th>Nội dung</th><th>Thời lượng</th></tr></thead>
+      <tbody id="hopBang"></tbody></table>
+  </div>
+</dialog>
+<div class="thongbao" id="thongBao"></div>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const TT = { dang_lam: 'Đang làm', vi_pham: 'ĐANG VI PHẠM', mat_tin_hieu: 'Mất tín hiệu', da_tat: 'Tự đóng giám sát',
+             chua_vao: 'Chưa vào', cho: 'Đã vào – chờ', xong: 'Đã xong' };
+const BUOI = { cho: 'Chờ bắt đầu', dang_thi: 'Đang thi', ket_thuc: 'Đã kết thúc' };
+const LOAI = { vao: 'Vào bài', vi_pham: 'VI PHẠM', mat_tin_hieu: 'Mất tín hiệu', co_tin_hieu: 'Có tín hiệu lại',
+               tat: 'Tự đóng giám sát', canh_bao: 'Cảnh báo', he_thong: 'Thông tin' };
+let duLieu = null, lechGio = 0, daBietSuKien = null, dangXem = null, linkDangSua = false;
+
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+function gio(t) { return t ? new Date(t * 1000).toLocaleTimeString('vi-VN', { hour12: false }) : ''; }
+function pad(n) { return (n < 10 ? '0' : '') + n; }
+function khoang(s) {
+  s = Math.max(0, Math.round(s));
+  if (s < 60) return s + ' giây';
+  if (s < 3600) return Math.floor(s / 60) + ' phút ' + (s % 60) + ' giây';
+  return Math.floor(s / 3600) + ' giờ ' + Math.floor(s % 3600 / 60) + ' phút';
+}
+function bayGio() { return Date.now() / 1000 - lechGio; }
+function thongBao(s) { const e = $('thongBao'); e.textContent = s; e.classList.add('hien'); clearTimeout(e._t); e._t = setTimeout(() => e.classList.remove('hien'), 3500); }
+
+async function goi(duong, body) {
+  const r = await fetch(duong, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CodeGuard': '1' },
+                                 body: JSON.stringify(body || {}) });
+  const d = await r.json();
+  if (!d.ok) throw new Error(d.loi || 'Lỗi');
+  return d;
+}
+
+function keu() {
+  if (!$('amThanh').checked) return;
+  try {
+    const ac = keu.ac || (keu.ac = new (window.AudioContext || window.webkitAudioContext)());
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.frequency.value = 880; g.gain.value = 0.15; o.connect(g); g.connect(ac.destination);
+    o.start(); o.stop(ac.currentTime + 0.25);
+  } catch (e) {}
+}
+
+async function taiTongQuan() {
+  try {
+    const r = await fetch('/api/tongquan', { cache: 'no-store' });
+    duLieu = await r.json();
+    lechGio = Date.now() / 1000 - duLieu.bay_gio;
+    $('matKetNoi').style.display = 'none';
+    ve();
+  } catch (e) {
+    $('matKetNoi').style.display = 'block';
+  }
+}
+
+function ve() {
+  const d = duLieu, b = d.buoi;
+  const eb = $('buoi'); eb.className = 'buoi ' + b.trang_thai; eb.textContent = BUOI[b.trang_thai] || b.trang_thai;
+  $('nutBatDau').disabled = b.trang_thai !== 'cho';
+  $('nutKetThuc').disabled = b.trang_thai !== 'dang_thi';
+  $('nutBuoiMoi').disabled = b.trang_thai === 'dang_thi';
+  $('nutMaMoi').disabled = b.trang_thai === 'dang_thi';
+  const ip = d.dia_chi && d.dia_chi.length ? d.dia_chi : null;
+  $('ip').textContent = ip ? ip.join('  hoặc  ') : 'chưa nối mạng';
+  $('linkTai').textContent = ip ? 'http://' + ip[0] + ':' + d.cong : '—';
+  if (!linkDangSua) $('link').value = b.link || '';
+
+  // Số liệu
+  const hs = d.hoc_sinh;
+  const dem = k => hs.filter(h => h.tinh_trang === k).length;
+  $('sTong').textContent = hs.length;
+  $('sDangLam').textContent = dem('dang_lam') + dem('cho');
+  $('sViPham').textContent = dem('vi_pham');
+  $('sMat').textContent = dem('mat_tin_hieu') + dem('da_tat');
+  $('sChua').textContent = dem('chua_vao');
+  $('sTongVP').textContent = hs.reduce((a, h) => a + h.so_vi_pham, 0);
+
+  // Bảng
+  const tim = $('tim').value.trim().toLowerCase();
+  let ds = hs.filter(h => !tim || h.ten.toLowerCase().includes(tim));
+  if ($('xepVP').checked) {
+    const uu = { vi_pham: 0, da_tat: 1, mat_tin_hieu: 2 };
+    ds = ds.slice().sort((a, c) => ((uu[a.tinh_trang] ?? 9) - (uu[c.tinh_trang] ?? 9)) || (c.so_vi_pham - a.so_vi_pham) || (a.stt - c.stt));
+  }
+  const now = bayGio();
+  $('bang').innerHTML = ds.length ? ds.map(h => {
+    const ht = h.hien_tai;
+    const dangMo = ht && ht.nhan && h.tinh_trang !== 'chua_vao'
+      ? `<div class="${ht.hop_le ? 'dung' : 'sai'}">${ht.hop_le ? '✔' : '✖'} ${esc(ht.nhan)}</div><div class="td" title="${esc(ht.tieu_de)}">${esc(ht.tieu_de)}</div>` : '';
+    const canhBao = [];
+    if (h.sua_giam_sat) canhBao.push('Giám sát bị sửa/khác bản');
+    if (h.so_lan_tat) canhBao.push('Tự đóng ' + h.so_lan_tat + ' lần');
+    if (h.so_canh_bao) canhBao.push(h.so_canh_bao + ' cảnh báo');
+    return `<tr class="${h.tinh_trang}" data-ten="${esc(h.ten)}">
+      <td class="nho">${h.stt}</td>
+      <td><b>${esc(h.ten)}</b>${canhBao.length ? `<div class="co-canh-bao">⚠ ${esc(canhBao.join(' · '))}</div>` : ''}</td>
+      <td><span class="the-tt tt-${h.tinh_trang}">${TT[h.tinh_trang] || h.tinh_trang}</span></td>
+      <td class="dang-mo">${dangMo}</td>
+      <td class="so-vp ${h.so_vi_pham ? 'co' : ''}">${h.so_vi_pham}</td>
+      <td class="nho">${h.giay_vi_pham ? khoang(h.giay_vi_pham) : ''}</td>
+      <td class="nho" style="text-align:center">${h.so_mat_tin_hieu || ''}</td>
+      <td class="nho">${esc(h.may)}</td>
+      <td class="nho">${gio(h.gio_vao)}</td>
+      <td class="nho">${h.lan_cuoi && h.tinh_trang !== 'chua_vao' ? khoang(now - h.lan_cuoi) + ' trước' : ''}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="10" class="trong">${hs.length ? 'Không tìm thấy.' : 'danhsach.txt đang trống. Thầy ghi tên học sinh vào file rồi chạy lại chương trình máy thầy.'}</td></tr>`;
+
+  // Diễn biến
+  const sk = d.su_kien;
+  $('feed').innerHTML = sk.length ? sk.map(e => `<div class="sk ${e.loai}"><span class="g">${gio(e.t)}</span>
+      <span class="ten">${esc(e.ten)}</span> – <b>${LOAI[e.loai] || e.loai}</b>: ${esc(e.noi_dung)}</div>`).join('')
+    : '<div class="trong">Chưa có gì.</div>';
+  const moiNhat = sk.length ? sk[0].t : 0;
+  if (daBietSuKien !== null && sk.some(e => e.t > daBietSuKien && e.loai === 'vi_pham')) keu();
+  daBietSuKien = Math.max(daBietSuKien || 0, moiNhat);
+
+  if (dangXem && $('hop').open) taiNhatKy(dangXem);
+}
+
+function dongHo() {
+  if (!duLieu) return;
+  const b = duLieu.buoi;
+  let s = '';
+  if (b.trang_thai === 'dang_thi' && b.bat_dau) s = bayGio() - b.bat_dau;
+  else if (b.trang_thai === 'ket_thuc' && b.bat_dau) s = b.ket_thuc - b.bat_dau;
+  if (s === '') { $('dongHo').textContent = ''; return; }
+  s = Math.floor(s);
+  $('dongHo').textContent = '⏱ ' + pad(Math.floor(s / 3600)) + ':' + pad(Math.floor(s / 60) % 60) + ':' + pad(s % 60);
+}
+
+async function taiNhatKy(ten) {
+  try {
+    const r = await fetch('/api/nhatky?ten=' + encodeURIComponent(ten), { cache: 'no-store' });
+    const d = await r.json();
+    if (!d.ok) return;
+    $('hopMay').textContent = d.may ? `Máy: ${d.may} · IP: ${d.ip} · Tài khoản: ${d.nguoi_dung} · ${d.he_dieu_hanh}` : 'Em chưa vào bài.';
+    const nk = d.nhat_ky.slice().reverse();
+    $('hopBang').innerHTML = nk.length ? nk.map(e => `<tr class="${e.loai === 'vi_pham' ? 'vi_pham' : ''}">
+        <td class="nho">${gio(e.t)}</td><td><b>${LOAI[e.loai] || e.loai}</b></td><td>${esc(e.noi_dung)}</td>
+        <td class="nho">${e.loai === 'vi_pham' ? (e.giay == null ? 'đang diễn ra' : khoang(e.giay)) : ''}</td></tr>`).join('')
+      : '<tr><td colspan="4" class="trong">Chưa có gì.</td></tr>';
+  } catch (e) {}
+}
+
+$('bang').addEventListener('click', e => {
+  const tr = e.target.closest('tr[data-ten]');
+  if (!tr) return;
+  dangXem = tr.dataset.ten;
+  $('hopTen').textContent = dangXem;
+  $('hopBang').innerHTML = '';
+  $('hopMay').textContent = '';
+  $('hop').showModal();
+  taiNhatKy(dangXem);
+});
+$('nutDong').onclick = () => { $('hop').close(); dangXem = null; };
+$('nutDatLai').onclick = async () => {
+  if (!dangXem || !confirm('Cho em ' + dangXem + ' đăng nhập lại?\n(Dùng khi em đổi máy hoặc chương trình giám sát bị lỗi.)')) return;
+  try { await goi('/api/datlai', { ten: dangXem }); thongBao('Đã cho phép đăng nhập lại.'); taiTongQuan(); } catch (e) { alert(e.message); }
+};
+$('nutBatDau').onclick = async () => {
+  if (!confirm('Bắt đầu buổi thi?\nTừ lúc này mọi lần học sinh rời khỏi chương trình được phép đều bị tính là vi phạm.')) return;
+  try { await goi('/api/batdau'); thongBao('Đã bắt đầu buổi thi.'); taiTongQuan(); } catch (e) { alert(e.message); }
+};
+$('nutKetThuc').onclick = async () => {
+  if (!confirm('Kết thúc buổi thi?\nKết quả sẽ được tự động lưu vào thư mục "ketqua".')) return;
+  try { const d = await goi('/api/ketthuc'); thongBao('Đã kết thúc. Kết quả lưu tại: ' + d.thu_muc); taiTongQuan(); } catch (e) { alert(e.message); }
+};
+$('nutBuoiMoi').onclick = async () => {
+  if (!confirm('Bắt đầu BUỔI THI MỚI?\nKết quả buổi hiện tại được lưu vào thư mục "ketqua", sau đó bảng được xoá trắng.\nMã vào bài của học sinh giữ nguyên.')) return;
+  try { await goi('/api/buoimoi'); thongBao('Đã tạo buổi thi mới.'); daBietSuKien = null; taiTongQuan(); } catch (e) { alert(e.message); }
+};
+$('link').addEventListener('focus', () => linkDangSua = true);
+$('link').addEventListener('blur', () => setTimeout(() => linkDangSua = false, 300));
+$('nutLink').onclick = async () => {
+  try { const d = await goi('/api/link', { link: $('link').value }); $('link').value = d.link; linkDangSua = false; thongBao('Đã lưu link. Máy học sinh sẽ có nút "Mở trang đề VNOJ".'); } catch (e) { alert(e.message); }
+};
+$('nutQuyDinh').onclick = async () => {
+  try { await goi('/api/tailaiquydinh'); thongBao('Đã tải lại quydinh.json. Máy học sinh tự cập nhật sau vài giây.'); } catch (e) { alert(e.message); }
+};
+$('nutMaMoi').onclick = async () => {
+  if (!confirm('Tạo lại TOÀN BỘ mã vào bài?\nMã cũ sẽ không dùng được nữa, thầy phải in và phát lại.')) return;
+  try { await goi('/api/taomamoi'); thongBao('Đã tạo mã mới. Bấm "In mã vào bài" để in.'); } catch (e) { alert(e.message); }
+};
+$('tim').addEventListener('input', () => duLieu && ve());
+$('xepVP').addEventListener('change', () => duLieu && ve());
+$('amThanh').addEventListener('change', () => { if ($('amThanh').checked) { keu(); } });
+
+taiTongQuan();
+setInterval(taiTongQuan, 2000);
+setInterval(dongHo, 500);
+</script>
+</body>
+</html>

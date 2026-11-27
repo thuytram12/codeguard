@@ -1,0 +1,7 @@
+# Danh sách lớp – mỗi dòng một học sinh.
+# Thầy XOÁ các tên mẫu dưới đây và ghi tên học sinh lớp mình vào (có thể dán từ Excel).
+# Không cần ghi mã: lần đầu chạy maythay.py sẽ tự tạo mã ngẫu nhiên và ghi vào file này.
+
+Nguyễn Văn An
+Trần Thị Bình
+Lê Văn Cường

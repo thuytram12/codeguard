@@ -1,0 +1,75 @@
+{
+  "ghi_chu": "Danh sách chương trình học sinh được phép dùng. Sửa xong bấm 'Tải lại quy định' trên trang của thầy.",
+  "chuong_trinh_duoc_phep": [
+    {
+      "ten": "Code::Blocks",
+      "tien_trinh": [
+        "codeblocks.exe",
+        "cblauncher.exe",
+        "cb_console_runner.exe",
+        "gdb.exe"
+      ]
+    },
+    {
+      "ten": "Python IDLE",
+      "tien_trinh": [
+        "python.exe",
+        "pythonw.exe",
+        "python3*.exe",
+        "pythonw3*.exe",
+        "py.exe",
+        "pyw.exe"
+      ]
+    },
+    {
+      "ten": "Notepad",
+      "tien_trinh": [
+        "notepad.exe"
+      ]
+    }
+  ],
+  "trinh_duyet": [
+    {
+      "ten": "Chrome (VNOJ)",
+      "tien_trinh": [
+        "chrome.exe"
+      ],
+      "tieu_de_phai_chua": [
+        "VNOJ",
+        "VNOI"
+      ]
+    }
+  ],
+  "cua_so_dong_lenh": {
+    "ten": "Cửa sổ chạy chương trình",
+    "lop_cua_so": [
+      "ConsoleWindowClass",
+      "CASCADIA_HOSTING_WINDOW_CLASS"
+    ],
+    "tieu_de_cam": [
+      "cmd.exe",
+      "command prompt",
+      "dấu nhắc lệnh",
+      "powershell",
+      "pwsh"
+    ]
+  },
+  "bo_qua_lop_cua_so": [
+    "Shell_TrayWnd",
+    "Shell_SecondaryTrayWnd",
+    "Progman",
+    "WorkerW",
+    "MultitaskingViewFrame",
+    "XamlExplorerHostIslandWindow",
+    "ForegroundStaging",
+    "TaskSwitcherWnd",
+    "#32768",
+    "NotifyIconOverflowWindow",
+    "TopLevelWindowForOverflowXamlIsland"
+  ],
+  "bo_qua_tien_trinh": [
+    "startmenuexperiencehost.exe",
+    "shellexperiencehost.exe",
+    "lockapp.exe"
+  ]
+}
