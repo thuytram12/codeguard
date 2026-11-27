@@ -29,6 +29,10 @@ try:
     import anthropic
 except ImportError:  # vẫn mở được giao diện, chỉ báo lỗi khi chấm
     anthropic = None
+try:
+    from PIL import Image, ImageDraw, ImageOps
+except ImportError:  # chỉ cần khi dùng chức năng che tên
+    Image = None
 
 THU_MUC = os.path.dirname(os.path.abspath(__file__))
 DU_LIEU = os.path.join(THU_MUC, 'dulieu')
@@ -36,7 +40,9 @@ CAU_HINH = os.path.join(THU_MUC, 'cauhinh.json')
 TRANG = os.path.join(THU_MUC, 'trang.html')
 CONG = 8800
 SO_LUONG_CHAM_CUNG_LUC = 3
-SO_BAI_MAU = 4  # số bài giáo viên đã duyệt gửi kèm làm mẫu khi chấm
+SO_BAI_MAU = 4  # số bài giáo viên đã duyệt (cùng đề) gửi kèm làm mẫu khi chấm
+SO_VI_DU_MOI_DANG = 3  # số câu mẫu lấy từ đề khác có cùng dạng bài, cho mỗi câu
+SO_VI_DU_TOI_DA = 12  # tổng số câu mẫu từ đề khác trong một lần chấm
 
 MO_HINH = 'claude-opus-5-5'
 DO_KY = 'high'  # mức suy nghĩ khi chấm: low | medium | high | xhigh | max
@@ -133,14 +139,40 @@ def luu_tep(thu_muc, ten_goc, tep):
     return {'ten': ten, 'mime': mime}
 
 
-def khoi_noi_dung(duong_dan, mime):
-    with open(duong_dan, 'rb') as f:
-        b64 = base64.standard_b64encode(f.read()).decode('ascii')
+def khoi_noi_dung(duong_dan, mime, du_lieu=None):
+    if du_lieu is None:
+        with open(duong_dan, 'rb') as f:
+            du_lieu = f.read()
+    b64 = base64.standard_b64encode(du_lieu).decode('ascii')
     if mime == 'application/pdf':
         return {'type': 'document',
                 'source': {'type': 'base64', 'media_type': mime, 'data': b64}}
     return {'type': 'image',
             'source': {'type': 'base64', 'media_type': mime, 'data': b64}}
+
+
+def can_che(de, chi_so_trang):
+    """Trang thứ chi_so_trang (tính từ 0) của bài có phải che tên không."""
+    return bool(de.get('vung_che')) and (chi_so_trang == 0 or de.get('che_moi_trang'))
+
+
+def anh_da_che(de, duong_dan, mime, chi_so_trang):
+    """Trả về (bytes, mime) của trang đã che vùng ghi tên; None nếu trang này không cần che."""
+    if not can_che(de, chi_so_trang):
+        return None
+    if mime == 'application/pdf':
+        raise RuntimeError('Bài này tải lên dạng PDF từ phiên bản cũ nên không che tên được. '
+                           'Hãy xoá bài và tải lại (app sẽ tự tách PDF thành ảnh).')
+    if Image is None:
+        raise RuntimeError('Chức năng che tên cần thư viện pillow. Chạy lại chay.bat để cài tự động.')
+    im = ImageOps.exif_transpose(Image.open(duong_dan)).convert('RGB')
+    w, h = im.size
+    ve = ImageDraw.Draw(im)
+    for v in de['vung_che']:
+        ve.rectangle([v['x'] * w, v['y'] * h, (v['x'] + v['w']) * w, (v['y'] + v['h']) * h], fill='black')
+    out = io.BytesIO()
+    im.save(out, 'JPEG', quality=88)
+    return out.getvalue(), 'image/jpeg'
 
 
 def lay_khoa_api():
@@ -233,6 +265,23 @@ def chuan_so(s):
     return re.sub(r'[\s.:)]+$', '', s).replace(' ', '')
 
 
+def chuan_vung_che(ds):
+    kq = []
+    for v in (ds or [])[:10]:
+        try:
+            x, y, w, h = (min(1.0, max(0.0, float(v[k]))) for k in ('x', 'y', 'w', 'h'))
+        except (KeyError, TypeError, ValueError):
+            raise ValueError('Vùng che tên không hợp lệ')
+        w, h = min(w, 1 - x), min(h, 1 - y)
+        if w > 0.005 and h > 0.005:
+            kq.append({'x': round(x, 4), 'y': round(y, 4), 'w': round(w, 4), 'h': round(h, 4)})
+    return kq
+
+
+def chuan_dang(s):
+    return re.sub(r'\s+', ' ', str(s or '')).strip().lower()
+
+
 def tong_toi_da(de):
     return lam_tron(sum(float(c.get('diem', 0)) for c in de.get('cau', [])), 0.01)
 
@@ -273,6 +322,68 @@ def van_ban_bai_mau(cac_bai):
     return '\n'.join(dong)
 
 
+def vi_du_cung_dang(de):
+    """Các câu giáo viên đã duyệt ở ĐỀ KHÁC, có cùng 'dạng bài' với câu trong đề này."""
+    can = {chuan_dang(c.get('dang')) for c in de.get('cau', []) if chuan_dang(c.get('dang'))}
+    if not can or not os.path.isdir(DU_LIEU):
+        return []
+    theo_dang = {}
+    for ten in os.listdir(DU_LIEU):
+        if ten == de['id'] or not re.fullmatch(r'[0-9a-f]{10}', ten):
+            continue
+        de_khac = doc_de(ten)
+        if not de_khac:
+            continue
+        cau_khac = {chuan_so(c['so']): c for c in de_khac.get('cau', []) if chuan_dang(c.get('dang')) in can}
+        if not cau_khac:
+            continue
+        for b in ds_bai(ten):
+            gv = b.get('duyet')
+            if not gv or gv.get('lam_mau') is False:
+                continue
+            ai = {chuan_so(c['so']): c for c in (b.get('ket_qua') or {}).get('cau', [])} \
+                if b.get('trang_thai') == 'xong' else {}
+            for c in gv['cau']:
+                g = cau_khac.get(chuan_so(c['so']))
+                if not g:
+                    continue
+                a = ai.get(chuan_so(c['so']))
+                theo_dang.setdefault(chuan_dang(g['dang']), []).append({
+                    'dang': g['dang'], 'de': de_khac.get('ten', ''), 'noidung': g.get('noidung', ''),
+                    'dapan': g.get('dapan', ''), 'toi_da': c.get('toi_da', g['diem']),
+                    'chep_lai': c.get('chep_lai', ''), 'diem': c['diem'], 'nhan_xet': c.get('nhan_xet', ''),
+                    'diem_ai': a['diem'] if a else None,
+                    'co_sua': bool(a) and abs(float(a['diem']) - float(c['diem'])) > 1e-9,
+                    'luc': gv.get('luc', '')})
+    kq = []
+    for dang in sorted(theo_dang):
+        ds = sorted(theo_dang[dang], key=lambda x: x['luc'], reverse=True)
+        ds.sort(key=lambda x: not x['co_sua'])
+        kq += ds[:SO_VI_DU_MOI_DANG]
+    return kq[:SO_VI_DU_TOI_DA]
+
+
+def van_ban_vi_du(ds):
+    dong = ['VÍ DỤ CHẤM TỪ ĐỀ KHÁC CÙNG DẠNG BÀI',
+            'Đây là các câu cùng dạng ở đề khác, giáo viên đã duyệt điểm. Thang điểm có thể khác đề này; '
+            'hãy học cách giáo viên cho điểm và mức độ khắt khe, không chép điểm số.', '']
+    for i, v in enumerate(ds, 1):
+        dong.append(f"--- Ví dụ {i} · dạng: {v['dang']} · đề: {v['de']} ---")
+        if v['noidung']:
+            dong.append('Đề: ' + v['noidung'])
+        if v['dapan']:
+            dong.append('Đáp án và thang điểm: ' + v['dapan'])
+        dong.append('Học sinh viết:\n' + (v['chep_lai'] or '(bỏ trống)'))
+        d = f"Điểm giáo viên cho: {so_vn(v['diem'])}/{so_vn(v['toi_da'])}"
+        if v['co_sua']:
+            d += f" (AI chấm ban đầu: {so_vn(v['diem_ai'])})"
+        dong.append(d)
+        if v['nhan_xet']:
+            dong.append('Nhận xét của giáo viên: ' + v['nhan_xet'])
+        dong.append('')
+    return '\n'.join(dong)
+
+
 def cham_mot_bai(de_id, bai_id):
     de = doc_de(de_id)
     with khoa:
@@ -304,16 +415,24 @@ def cham_mot_bai(de_id, bai_id):
         phan_gv = []
         if phong_cach:
             phan_gv.append('THÓI QUEN CHẤM CỦA GIÁO VIÊN (áp dụng cho mọi đề):\n' + phong_cach)
+        vi_du = vi_du_cung_dang(de)
+        if vi_du:
+            phan_gv.append(van_ban_vi_du(vi_du))
         if bai_mau:
             phan_gv.append(van_ban_bai_mau(bai_mau))
         if phan_gv:
             noi_dung.append({'type': 'text', 'text': '\n\n'.join(phan_gv),
                              'cache_control': {'type': 'ephemeral'}})
         # 3) Bài làm của học sinh.
-        noi_dung.append({'type': 'text', 'text': f"BÀI LÀM CỦA HỌC SINH CẦN CHẤM ({len(bai['trang'])} trang, theo thứ tự):"})
-        for i, t in enumerate(bai['trang'], 1):
-            noi_dung.append({'type': 'text', 'text': f'Trang {i}:'})
-            noi_dung.append(khoi_noi_dung(os.path.join(tm_bai(de_id, bai_id), t['ten']), t['mime']))
+        ghi = f"BÀI LÀM CỦA HỌC SINH CẦN CHẤM ({len(bai['trang'])} trang, theo thứ tự):"
+        if de.get('vung_che'):
+            ghi += '\n(Vùng ghi họ tên đã được che để bảo mật, không cần đọc tên.)'
+        noi_dung.append({'type': 'text', 'text': ghi})
+        for i, t in enumerate(bai['trang']):
+            duong = os.path.join(tm_bai(de_id, bai_id), t['ten'])
+            che = anh_da_che(de, duong, t['mime'], i)
+            noi_dung.append({'type': 'text', 'text': f'Trang {i + 1}:'})
+            noi_dung.append(khoi_noi_dung(duong, che[1], che[0]) if che else khoi_noi_dung(duong, t['mime']))
         noi_dung.append({'type': 'text', 'text': 'Hãy chấm bài làm này. Trả kết quả cho đủ mọi câu trong đề, đúng thứ tự trong đề.'})
 
         bat_dau = time.time()
@@ -348,6 +467,7 @@ def cham_mot_bai(de_id, bai_id):
             c['diem'] = d
         kq['tong_diem'] = lam_tron(sum(c['diem'] for c in kq['cau']), 0.01)
         kq['so_bai_mau'] = len(bai_mau)
+        kq['so_vi_du_dang'] = len(vi_du)
 
         u = tra_loi.usage
         cap_nhat = {
@@ -518,9 +638,21 @@ def xuat_du_lieu(de_id=None, an_danh=True):
                     z.write(duong, f'de/{did}/{t["ten"]}')
             for b in cac_bai:
                 anh = []
-                for t in b['trang']:
+                for i, t in enumerate(b['trang']):
                     duong = os.path.join(tm_bai(did, b['id']), t['ten'])
-                    if os.path.isfile(duong):
+                    if not os.path.isfile(duong):
+                        continue
+                    che = None
+                    if an_danh:
+                        try:
+                            che = anh_da_che(de, duong, t['mime'], i)
+                        except RuntimeError:
+                            che = None  # PDF cũ / thiếu pillow: giữ nguyên, có ghi chú trong DOC_TRUOC
+                    if che:
+                        ten_che = os.path.splitext(t['ten'])[0] + '_che.jpg'
+                        z.writestr(f'anh/{b["id"]}/{ten_che}', che[0])
+                        anh.append(f'anh/{b["id"]}/{ten_che}')
+                    else:
                         z.write(duong, f'anh/{b["id"]}/{t["ten"]}')
                         anh.append(f'anh/{b["id"]}/{t["ten"]}')
                 ai = json.loads(json.dumps(b.get('ket_qua'))) if b.get('trang_thai') == 'xong' else None
@@ -543,8 +675,9 @@ def xuat_du_lieu(de_id=None, an_danh=True):
             '  ai         : kết quả AI chấm (bản chép lại, điểm từng ý, nhận xét)\n'
             '  giao_vien  : bản giáo viên đã duyệt (bản chép lại đã sửa, điểm, nhận xét) = nhãn đúng\n'
             'de/: đề, đáp án, thang điểm.\n\n'
-            'LƯU Ý: chế độ ẩn danh chỉ thay họ tên trong dữ liệu. Ảnh bài làm vẫn có thể còn họ tên\n'
-            'học sinh viết trên giấy. Chỉ dùng hoặc chia sẻ dữ liệu này khi đã có sự đồng ý theo\n'
+            'LƯU Ý: chế độ ẩn danh thay họ tên trong dữ liệu và che vùng ghi tên trên ảnh (nếu đề có\n'
+            'đặt vùng che, tệp *_che.jpg). Đề chưa đặt vùng che thì ảnh vẫn còn họ tên học sinh.\n'
+            'Hãy xem lại ảnh trước khi chia sẻ. Chỉ dùng hoặc chia sẻ dữ liệu này khi đã có sự đồng ý theo\n'
             'quy định bảo vệ dữ liệu cá nhân (Nghị định 13/2023/NĐ-CP).\n'))
     return out.getvalue(), len(mau)
 
@@ -607,7 +740,17 @@ class XuLy(BaseHTTPRequestHandler):
             return self.json({'co_khoa': bool(k), 'duoi_khoa': k[-4:] if k else '',
                               'phong_cach': (doc_json(CAU_HINH, {}) or {}).get('phong_cach', ''),
                               'tu_bien_moi_truong': bool(os.environ.get('ANTHROPIC_API_KEY')),
-                              'co_thu_vien': anthropic is not None, 'mo_hinh': MO_HINH})
+                              'co_thu_vien': anthropic is not None, 'co_pillow': Image is not None,
+                              'mo_hinh': MO_HINH})
+        if p == ['api', 'dangbai']:
+            dem = {}
+            if os.path.isdir(DU_LIEU):
+                for ten in os.listdir(DU_LIEU):
+                    d = doc_json(os.path.join(DU_LIEU, ten, 'de.json'))
+                    for c in (d or {}).get('cau', []):
+                        if c.get('dang'):
+                            dem.setdefault(chuan_dang(c['dang']), [c['dang'], 0])[1] += 1
+            return self.json(sorted((v for v in dem.values()), key=lambda v: -v[1]))
         if p == ['api', 'de']:
             ds = []
             if os.path.isdir(DU_LIEU):
@@ -652,6 +795,15 @@ class XuLy(BaseHTTPRequestHandler):
             if not os.path.isfile(duong):
                 return self.json({'loi': 'Không có tệp'}, 404)
             mime = next((m for m, d in KIEU_TEP.items() if ten.endswith(d)), 'application/octet-stream')
+            if bai_id != 'de' and parse_qs(urlparse(self.path).query).get('che') == ['1']:
+                b = doc_bai(de_id, bai_id)
+                i = next((k for k, t in enumerate(b['trang']) if t['ten'] == ten), 0)
+                try:
+                    che = anh_da_che(doc_de(de_id), duong, mime, i)
+                except RuntimeError as e:
+                    raise ValueError(str(e))
+                if che:
+                    return self.gui(200, che[1], che[0])
             with open(duong, 'rb') as f:
                 return self.gui(200, mime, f.read())
         self.json({'loi': 'Không có trang này'}, 404)
@@ -712,6 +864,7 @@ class XuLy(BaseHTTPRequestHandler):
                 except ValueError:
                     raise ValueError(f'Điểm câu {so} không phải là số')
                 cau.append({'so': so, 'diem': diem,
+                            'dang': re.sub(r'\s+', ' ', str(c.get('dang', ''))).strip()[:80],
                             'noidung': str(c.get('noidung', '')).strip(),
                             'dapan': str(c.get('dapan', '')).strip()})
             if not cau:
@@ -725,6 +878,8 @@ class XuLy(BaseHTTPRequestHandler):
                 'lop': str(d.get('lop', '')).strip(),
                 'ghichu': str(d.get('ghichu', '')).strip(),
                 'cau': cau,
+                'vung_che': chuan_vung_che(d.get('vung_che', (cu or {}).get('vung_che', []))),
+                'che_moi_trang': bool(d.get('che_moi_trang', (cu or {}).get('che_moi_trang', False))),
                 'tep': (cu or {}).get('tep', []),
                 'tao_luc': (cu or {}).get('tao_luc', bay_gio()),
                 'sua_luc': bay_gio(),

@@ -20,8 +20,8 @@ Cuối cùng bấm **Tải Excel** để lấy bảng điểm cả lớp.
 ## Cách dùng
 
 1. Tải thư mục `chamtuluan` về máy, ví dụ `D:\ChamTuLuan`.
-2. Bấm đúp **`chay.bat`**. Lần đầu nó tự cài thư viện `anthropic` (cần Internet), sau đó trình duyệt tự mở trang `http://127.0.0.1:8800`.
-   Không có Windows: mở cửa sổ lệnh trong thư mục, chạy `pip install anthropic` rồi `python chambai.py`.
+2. Bấm đúp **`chay.bat`**. Lần đầu nó tự cài thư viện `anthropic` và `pillow` (cần Internet), sau đó trình duyệt tự mở trang `http://127.0.0.1:8800`.
+   Không có Windows: mở cửa sổ lệnh trong thư mục, chạy `pip install anthropic pillow` rồi `python chambai.py`.
 3. Bấm **⚙ Cài đặt**, dán khoá API, bấm **Lưu** (chỉ làm 1 lần).
 4. Bấm **+ Tạo đề mới**:
    - Nhập từng câu: số câu, điểm tối đa, đề bài, **đáp án và thang điểm**. Thang điểm càng chia ý rõ thì AI chấm càng sát.
@@ -29,7 +29,8 @@ Cuối cùng bấm **Tải Excel** để lấy bảng điểm cả lớp.
    - Bấm **Lưu đề**.
 5. Ở tab **Bài làm & kết quả**, tải bài lên:
    - *Các ảnh đã chọn là của 1 học sinh*: chọn tất cả các trang bài của một em (đúng thứ tự), có thể gõ tên.
-   - *Mỗi ảnh / mỗi PDF là bài của 1 học sinh*: chọn ảnh của cả lớp cùng lúc, mỗi em một ảnh (hoặc mỗi em một file PDF scan nhiều trang). AI tự đọc họ tên trên bài.
+   - *Mỗi ảnh / mỗi PDF là bài của 1 học sinh*: chọn ảnh của cả lớp cùng lúc, mỗi em một ảnh (hoặc mỗi em một file PDF scan nhiều trang). AI tự đọc họ tên trên bài, hoặc tích *Lấy họ tên từ tên tệp* nếu đã đặt tên file theo tên học sinh (ví dụ `Nguyen Van An.pdf`).
+   - File PDF được tự tách thành ảnh từng trang ngay trong trình duyệt.
 6. AI chấm ngay, mỗi bài khoảng 30 giây đến vài phút, 3 bài cùng lúc. Bấm vào một dòng để xem ảnh bài làm cạnh phần AI chép lại, điểm và nhận xét; có thể sửa tên hoặc **Chấm lại**.
 7. **Duyệt điểm:** trong cửa sổ chi tiết, sửa bản chép lại (nếu AI đọc sai), điểm và nhận xét từng câu rồi bấm **✔ Xác nhận điểm**. App tự mở bài tiếp theo để duyệt liên tục. Bài AI báo lỗi cũng chấm tay được ở đây.
 8. Bấm **⬇ Tải Excel** để lấy bảng điểm. Bài đã duyệt dùng điểm giáo viên, bài chưa duyệt dùng điểm AI.
@@ -38,14 +39,25 @@ Cuối cùng bấm **Tải Excel** để lấy bảng điểm cả lớp.
 
 - **Bài mẫu:** mỗi bài thầy/cô đã duyệt (có tích *Dùng làm bài mẫu cho AI*) được gửi kèm khi AI chấm các bài sau **của cùng đề**, tối đa 4 bài. App ưu tiên những bài thầy/cô đã sửa điểm của AI. Chỉ gửi phần chữ (bản chép lại, điểm, nhận xét), không gửi lại ảnh, nên tốn rất ít.
 - **Cách làm nên dùng:** tải cả lớp lên → duyệt kỹ 3–5 bài đầu → bấm **↻ Chấm lại bài chưa duyệt** để AI chấm lại phần còn lại theo cách của thầy/cô.
+- **Ví dụ từ đề khác cùng dạng:** khi soạn đề, ghi *Dạng bài* cho từng câu (ví dụ "Giải phương trình bậc hai", "Hình học – chứng minh tứ giác nội tiếp"). Khi chấm, AI được xem thêm các câu cùng dạng ở **đề khác** mà thầy/cô đã duyệt (tối đa 3 câu mỗi dạng, 12 câu mỗi lần chấm). Nhờ vậy đề mới cũng chấm theo cách của thầy/cô ngay từ bài đầu tiên.
 - **Thói quen chấm chung:** trong **⚙ Cài đặt** ghi những quy tắc thầy/cô luôn áp dụng (ví dụ "thiếu điều kiện xác định trừ 0,25đ"). Phần này áp dụng cho mọi đề.
 - **Độ sát của AI:** khung 📊 phía trên bảng kết quả so điểm AI với điểm giáo viên trên các bài đã duyệt: lệch trung bình bao nhiêu điểm, bao nhiêu phần trăm câu trùng điểm, câu nào AI hay lệch nhất.
+
+## Che tên học sinh
+
+Trong tab **Đề & đáp án**, mục *Che tên học sinh trên ảnh*: kéo chuột trên ảnh mẫu để khoanh vùng ghi họ tên (có thể khoanh nhiều vùng). Lưu đề xong:
+
+- Vùng đó được **tô đen trước khi gửi ảnh cho AI**, và trong dữ liệu xuất ở chế độ ẩn danh. Ảnh gốc vẫn giữ trên máy để thầy/cô xem.
+- Trong cửa sổ chi tiết bài, tích **👁 Xem ảnh gửi cho AI** để kiểm tra vùng che có trùm hết tên không.
+- Mặc định chỉ che trang 1. Tích *Che cả các trang sau* nếu trang nào cũng ghi tên.
+- Ảnh chụp bằng điện thoại mỗi bài lệch một chút, nên khoanh rộng ra. Giấy kiểm tra in sẵn ô họ tên ở vị trí cố định, scan bằng máy, là che chính xác nhất.
+- Khi đã che, AI không đọc được tên: gõ tên khi tải bài hoặc lấy tên từ tên tệp.
 
 ## Tích luỹ dữ liệu
 
 Nút **⬇ Dữ liệu đã duyệt** (ở trang chủ cho mọi đề, hoặc trong từng đề) xuất một tệp zip gồm ảnh bài làm, kết quả AI và bản giáo viên đã duyệt (`dulieu.jsonl`), cùng đề và đáp án. Dữ liệu này dùng để đo độ chính xác của AI, và sau này để huấn luyện AI chấm riêng.
 
-- Mặc định **ẩn danh**: họ tên được thay bằng mã. Ảnh bài làm vẫn có thể còn tên học sinh viết trên giấy.
+- Mặc định **ẩn danh**: họ tên được thay bằng mã, ảnh dùng bản đã che tên (nếu đề có đặt vùng che). Đề chưa đặt vùng che thì ảnh vẫn còn tên học sinh.
 - Chỉ chia sẻ dữ liệu khi đã có sự đồng ý theo quy định bảo vệ dữ liệu cá nhân (Nghị định 13/2023/NĐ-CP).
 
 ## Mẹo để AI chấm chính xác
@@ -72,4 +84,4 @@ Mỗi bài tính tiền theo lượng ảnh và chữ gửi đi và nhận về.
 | `chambai.py` | Chương trình chính: máy chủ web nhỏ + gửi bài cho AI chấm |
 | `trang.html` | Giao diện trên trình duyệt |
 
-Tuỳ chỉnh trong đầu file `chambai.py`: `MO_HINH` (mô hình AI), `DO_KY` (mức suy nghĩ khi chấm, mặc định `high`), `SO_BAI_MAU` (số bài mẫu gửi kèm, mặc định 4), `SO_LUONG_CHAM_CUNG_LUC`, `CONG`.
+Tuỳ chỉnh trong đầu file `chambai.py`: `MO_HINH` (mô hình AI), `DO_KY` (mức suy nghĩ khi chấm, mặc định `high`), `SO_BAI_MAU` (số bài mẫu cùng đề, mặc định 4), `SO_VI_DU_MOI_DANG` / `SO_VI_DU_TOI_DA` (câu mẫu từ đề khác cùng dạng), `SO_LUONG_CHAM_CUNG_LUC`, `CONG`.
