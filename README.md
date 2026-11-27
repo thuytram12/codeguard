@@ -30,8 +30,9 @@ Khi học sinh mở chương trình khác (trang web khác, Zalo, Word, cmd…):
 | `quydinh.json` | Máy thầy | Danh sách chương trình được phép (thường không cần sửa) |
 | `mo_tuong_lua.bat` | Máy thầy | Mở tường lửa (chạy 1 lần) |
 | `giamsat.pyw` | **Máy học sinh** | Chương trình giám sát |
+| `goi_hoc_sinh/` | Máy thầy | Python chạy kèm, dùng để tạo gói `GiamSat.zip` cho máy học sinh **chưa cài Python** |
 
-Tất cả chỉ dùng Python có sẵn, **không cần cài thêm thư viện nào**.
+Máy thầy cần Python (không cần cài thêm thư viện nào). **Máy học sinh không cần cài Python.**
 
 ---
 
@@ -46,11 +47,18 @@ Tất cả chỉ dùng Python có sẵn, **không cần cài thêm thư viện n
    - Mở lại `danhsach.txt` sẽ thấy mỗi em đã có mã, ví dụ `Nguyễn Văn An;4821`.
 5. Trên trang theo dõi, bấm **🖨 In mã vào bài**, in ra, cắt và phát cho từng em. Mã giữ nguyên cho các buổi sau, trừ khi thầy bấm **Tạo mã mới**.
 
-### Trên máy học sinh
-Học sinh cần file `giamsat.pyw`. Chọn 1 trong 2 cách:
+### Trên máy học sinh (không cần cài Python)
+Học sinh dùng gói **`GiamSat.zip`** (khoảng 9 MB). Gói có sẵn Python chạy kèm, không cần cài đặt. Các file Python bên trong là bản gốc, có chữ ký số của Python Software Foundation, nên Windows Defender không chặn.
 
-- **Cách 1, tải từ máy thầy (dễ nhất).** Khi máy thầy đang chạy, học sinh mở Chrome và gõ địa chỉ ghi trên trang theo dõi (dòng *"Tải chương trình giám sát"*, ví dụ `http://192.168.1.5:8765`), rồi bấm **Tải giamsat.pyw**. Nếu Chrome hỏi thì bấm **Giữ lại / Keep**. File tải theo cách này **đã ghi sẵn địa chỉ máy thầy**, học sinh không phải gõ.
-- **Cách 2.** Chép file `giamsat.pyw` qua USB, Zalo hoặc thư mục chia sẻ, rồi để ra Desktop.
+**Lấy gói về máy học sinh**, chọn 1 trong 2 cách:
+- **Cách 1, tải từ máy thầy (dễ nhất).** Khi máy thầy đang chạy, học sinh mở Chrome, gõ địa chỉ ghi trên trang theo dõi (dòng *"Tải chương trình giám sát"*, ví dụ `http://192.168.1.5:8765`), rồi bấm **Tải GiamSat.zip**. Nếu Chrome hỏi thì bấm **Giữ lại / Keep**.
+- **Cách 2, chép qua USB/Zalo.** Trên trang theo dõi, thầy bấm **⬇ Gói cho học sinh** để lưu `GiamSat.zip`, rồi chép sang các máy.
+
+Cả hai cách đều **ghi sẵn địa chỉ máy thầy** vào gói, học sinh không phải gõ.
+
+**Giải nén** (chỉ làm 1 lần): bấm chuột phải vào `GiamSat.zip` → **Extract All** (Giải nén tất cả) → **Extract**. Được thư mục `GiamSat`, có thể để ra Desktop.
+
+> Máy nào đã cài Python thì cũng có thể chỉ tải 1 file `giamsat.pyw` và bấm đúp vào file đó.
 
 ---
 
@@ -59,10 +67,9 @@ Học sinh cần file `giamsat.pyw`. Chọn 1 trong 2 cách:
 1. Máy thầy: bấm đúp `chay_may_thay.bat`. **Không đóng cửa sổ đen này** trong giờ thi.
 2. Ghi lên bảng **địa chỉ máy thầy** hiện ở đầu trang theo dõi, ví dụ `192.168.1.5`.
 3. Dán link kỳ thi VNOJ vào ô **Link kỳ thi VNOJ** rồi bấm **Lưu link**. Máy học sinh sẽ có nút "Mở trang đề VNOJ".
-4. Học sinh bấm đúp `giamsat.pyw`:
-   - Chương trình **tự tìm máy thầy**. Nếu không tìm được, em gõ địa chỉ trên bảng rồi bấm **Kết nối**.
+4. Học sinh mở thư mục `GiamSat` và bấm đúp **`Chay giam sat`**. Nếu Windows hỏi thì bấm **Run / Chạy**.
+   - Chương trình kết nối máy thầy. Nếu không được, em gõ địa chỉ trên bảng rồi bấm **Kết nối**.
    - Em chọn tên, nhập mã thầy phát, bấm **Vào làm bài**.
-   - Nếu bấm đúp không mở được: chuột phải vào file → **Open with** → **Python**, hoặc mở bằng IDLE rồi bấm **F5**.
 5. Trên trang theo dõi, chờ đủ học sinh có trạng thái **"Đã vào – chờ"**.
 6. Bấm **▶ Bắt đầu buổi thi**. Từ lúc này mọi lần rời khỏi chương trình được phép đều bị tính là vi phạm. Chrome trên máy học sinh tự mở trang đề.
 
@@ -103,9 +110,11 @@ Học sinh cần file `giamsat.pyw`. Chọn 1 trong 2 cách:
 | Học sinh gõ đúng địa chỉ vẫn không kết nối được | Máy thầy chưa chạy `mo_tuong_lua.bat` (chạy bằng **Run as administrator**). Kiểm tra máy học sinh và máy thầy có cùng mạng WiFi/LAN không |
 | Máy thầy có nhiều địa chỉ | Thử lần lượt các địa chỉ hiện trên trang theo dõi. Thường là địa chỉ bắt đầu bằng `192.168.` |
 | Cửa sổ đen báo "Không mở được cổng 8765" | Chương trình máy thầy đang chạy ở một cửa sổ khác. Đóng cửa sổ đó rồi chạy lại |
-| Bấm đúp `giamsat.pyw` không mở | Chuột phải → **Open with** → **Python**, hoặc mở bằng IDLE rồi bấm **F5** |
+| Bấm `Chay giam sat` hiện chữ "CHUA GIAI NEN" | Em đang chạy thẳng trong file zip. Chuột phải vào `GiamSat.zip` → **Extract All**, rồi chạy trong thư mục `GiamSat` vừa giải nén |
+| Bấm `Chay giam sat` thấy cửa sổ đen chớp rồi tắt | Bình thường. Cửa sổ giám sát sẽ hiện sau 1–3 giây |
+| Bấm đúp `giamsat.pyw` không mở (máy có Python) | Chuột phải → **Open with** → **Python**, hoặc dùng gói `GiamSat.zip` |
 | Báo "Sai mã vào bài" | Kiểm tra lại mã. Sai 5 lần liên tiếp sẽ bị khoá 60 giây |
-| Bảng hiện "Giám sát bị sửa/khác bản" | File `giamsat.pyw` của em khác bản của thầy: bị sửa, hoặc là bản cũ. Cho em tải lại theo Cách 1 |
+| Bảng hiện "Giám sát bị sửa/khác bản" | File `giamsat.pyw` của em khác bản của thầy: bị sửa, hoặc là bản cũ. Cho em tải lại `GiamSat.zip` từ máy thầy |
 | Muốn cho phép thêm chương trình (ví dụ Dev-C++) | Xem mục F |
 
 ## F. Sửa danh sách chương trình được phép (`quydinh.json`)

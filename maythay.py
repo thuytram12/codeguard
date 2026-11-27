@@ -23,6 +23,7 @@ import sys
 import threading
 import time
 import webbrowser
+import zipfile
 from collections import Counter
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
@@ -43,6 +44,7 @@ FILE_DANH_SACH = os.path.join(THU_MUC, 'danhsach.txt')
 FILE_QUY_DINH = os.path.join(THU_MUC, 'quydinh.json')
 FILE_TRANG_THAI = os.path.join(THU_MUC, 'trangthai.json')
 FILE_GIAM_SAT = os.path.join(THU_MUC, 'giamsat.pyw')
+FILE_GOI_PYTHON = os.path.join(THU_MUC, 'goi_hoc_sinh', 'python_hocsinh.zip')
 FILE_TRANG_THAY = os.path.join(THU_MUC, 'trangthay.html')
 THU_MUC_KET_QUA = os.path.join(THU_MUC, 'ketqua')
 
@@ -724,17 +726,83 @@ def trang_in_ma():
 TRANG_HOC_SINH = '''<!doctype html><html lang="vi"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>CodeGuard – Tải chương trình</title>
 <style>body{font-family:"Segoe UI",Arial,sans-serif;background:#f3f6fa;margin:0;color:#1d2733}
-.k{max-width:620px;margin:40px auto;background:#fff;border-radius:12px;padding:24px 28px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
-h1{color:#0b4f9c;font-size:22px;margin-top:0}a.n{display:inline-block;background:#0b4f9c;color:#fff;padding:12px 20px;
-border-radius:8px;text-decoration:none;font-weight:700;font-size:18px}li{margin:6px 0;line-height:1.5}</style></head>
+.k{max-width:640px;margin:32px auto;background:#fff;border-radius:12px;padding:24px 28px;box-shadow:0 2px 10px rgba(0,0,0,.08)}
+h1{color:#0b4f9c;font-size:22px;margin-top:0}h2{font-size:17px;margin:22px 0 6px}
+a.n{display:inline-block;background:#0b4f9c;color:#fff;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:700;font-size:18px}
+a.p{color:#0b4f9c;font-weight:600}li{margin:6px 0;line-height:1.5}.phu{color:#5b6b7c;font-size:14px}</style></head>
 <body><div class="k"><h1>Chương trình giám sát phòng thi</h1>
-<p><a class="n" href="/taive/giamsat.pyw" download>Tải giamsat.pyw</a></p>
+<h2>Máy em CHƯA cài Python (chỉ có Code::Blocks)</h2>
+<p><a class="n" href="/taive/GiamSat.zip" download>Tải GiamSat.zip</a> <span class="phu">(khoảng 9 MB, không cần cài Python)</span></p>
 <ol><li>Bấm nút trên để tải về. Nếu Chrome hỏi, bấm <b>Giữ lại</b> (Keep).</li>
-<li>Mở thư mục <b>Tải xuống</b>, bấm đúp vào file <b>giamsat.pyw</b>.</li>
-<li>Nếu không mở được: bấm chuột phải vào file → <b>Open with</b> → <b>Python</b>
-(hoặc mở bằng IDLE rồi bấm <b>F5</b>).</li>
+<li>Mở thư mục <b>Tải xuống</b>, bấm chuột phải vào <b>GiamSat.zip</b> → <b>Extract All</b> (Giải nén tất cả) → <b>Extract</b>.</li>
+<li>Mở thư mục <b>GiamSat</b> vừa giải nén, bấm đúp vào <b>Chay giam sat</b>.
+Nếu Windows hỏi, bấm <b>Run</b> / <b>Chạy</b>.</li>
 <li>Chọn tên, nhập mã thầy phát, bấm <b>Vào làm bài</b>. Không đóng cửa sổ giám sát trong giờ thi.</li></ol>
+<h2>Máy em ĐÃ cài Python</h2>
+<p>Có thể tải gói ở trên, hoặc chỉ tải 1 file: <a class="p" href="/taive/giamsat.pyw" download>giamsat.pyw</a>
+rồi bấm đúp vào file đó (không mở được thì chuột phải → <b>Open with</b> → <b>Python</b>).</p>
 </div></body></html>'''
+
+
+BAT_CHAY = (
+    '@echo off\r\n'
+    'cd /d "%~dp0"\r\n'
+    'if not exist "python\\pythonw.exe" (\r\n'
+    '  echo.\r\n'
+    '  echo  CHUA GIAI NEN! Hay dong cua so nay, bam chuot phai vao file GiamSat.zip,\r\n'
+    '  echo  chon "Extract All" ^(Giai nen tat ca^), roi mo thu muc GiamSat va chay lai.\r\n'
+    '  echo.\r\n'
+    '  pause\r\n'
+    '  exit /b\r\n'
+    ')\r\n'
+    'start "" "python\\pythonw.exe" -I "giamsat.pyw"\r\n'
+).encode('ascii')
+
+HUONG_DAN_HOC_SINH = """CHƯƠNG TRÌNH GIÁM SÁT PHÒNG THI – HƯỚNG DẪN CHO HỌC SINH
+
+1. Bấm đúp vào file  "Chay giam sat"  (nếu Windows hỏi thì bấm Run / Chạy).
+2. Chọn tên của em, nhập mã thầy phát, bấm "Vào làm bài".
+3. KHÔNG đóng cửa sổ giám sát trong giờ thi.
+4. Chỉ dùng: Code::Blocks, Python IDLE, Notepad, Chrome (trang VNOJ).
+   Mở chương trình khác sẽ bị cảnh báo và báo cho thầy.
+
+Thư mục "python" bên trong là Python chạy kèm (không cần cài), đừng xoá.
+"""
+
+_khoa_goi = threading.Lock()
+_goi_cache = {}
+
+
+def ma_nguon_giam_sat(may_chu):
+    """Nội dung giamsat.pyw, điền sẵn địa chỉ máy thầy (nếu có)."""
+    nd = doc_van_ban(FILE_GIAM_SAT)
+    if may_chu:
+        nd = '\n'.join(("MAY_CHU = %r" % may_chu) if d.startswith('MAY_CHU =') else d
+                       for d in nd.splitlines()) + '\n'
+    return nd
+
+
+def tao_goi_hoc_sinh(may_chu):
+    """Tạo GiamSat.zip: Python chạy kèm + giamsat.pyw + file chạy. Học sinh không cần cài Python."""
+    nd = ma_nguon_giam_sat(may_chu)
+    khoa_cache = (may_chu, nd, os.path.getmtime(FILE_GOI_PYTHON))
+    with _khoa_goi:
+        if khoa_cache in _goi_cache:
+            return _goi_cache[khoa_cache]
+        out = io.BytesIO()
+        with zipfile.ZipFile(FILE_GOI_PYTHON) as nguon, \
+                zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED, compresslevel=6) as z:
+            for info in nguon.infolist():
+                if not info.is_dir():
+                    z.writestr('GiamSat/' + info.filename, nguon.read(info))
+            z.writestr('GiamSat/giamsat.pyw', nd.encode('utf-8'))
+            z.writestr('GiamSat/Chay giam sat.bat', BAT_CHAY)
+            z.writestr('GiamSat/HUONG DAN.txt', ('\ufeff' + HUONG_DAN_HOC_SINH).replace('\n', '\r\n').encode('utf-8'))
+        du_lieu = out.getvalue()
+        if len(_goi_cache) > 4:
+            _goi_cache.clear()
+        _goi_cache[khoa_cache] = du_lieu
+        return du_lieu
 
 
 # ----------------------------------------------------------------------------
@@ -806,6 +874,14 @@ class XuLy(BaseHTTPRequestHandler):
         host = (self.headers.get('Host') or '').rsplit(':', 1)[0].strip('[]').lower()
         return ip in ('127.0.0.1', '::1') and host in ('localhost', '127.0.0.1', '::1')
 
+    def dia_chi_cho_hoc_sinh(self):
+        """Địa chỉ máy thầy để ghi sẵn vào chương trình giám sát."""
+        host = self.headers.get('Host') or ''
+        if host and not host.startswith(('localhost', '127.')):
+            return host if ':' in host else host + ':80'
+        ips = dia_chi_ip()      # thầy tải trên chính máy mình: dùng địa chỉ LAN
+        return ('%s:%d' % (ips[0], CONG_WEB)) if ips else ''
+
     def cam(self):
         self.gui(403, 'text/plain; charset=utf-8', 'Trang này chỉ mở được trên máy thầy (http://localhost:%d)' % CONG_WEB)
 
@@ -820,18 +896,22 @@ class XuLy(BaseHTTPRequestHandler):
             return
         if p == '/taive/giamsat.pyw':
             try:
-                nd = doc_van_ban(FILE_GIAM_SAT)
+                nd = ma_nguon_giam_sat(self.dia_chi_cho_hoc_sinh())
             except OSError:
                 self.gui(404, 'text/plain; charset=utf-8', 'Không thấy giamsat.pyw')
                 return
-            host = self.headers.get('Host') or ''
-            if host and not host.startswith(('localhost', '127.')):
-                if ':' not in host:
-                    host += ':80'
-                nd = '\n'.join(("MAY_CHU = %r" % host) if d.startswith('MAY_CHU =') else d
-                               for d in nd.splitlines()) + '\n'
             self.gui(200, 'application/octet-stream', nd.encode('utf-8'),
                      {'Content-Disposition': 'attachment; filename="giamsat.pyw"'})
+            return
+        if p == '/taive/GiamSat.zip':
+            try:
+                du_lieu = tao_goi_hoc_sinh(self.dia_chi_cho_hoc_sinh())
+            except (OSError, zipfile.BadZipFile) as e:
+                self.gui(404, 'text/plain; charset=utf-8',
+                         'Không tạo được gói (thiếu goi_hoc_sinh/python_hocsinh.zip?): %s' % e)
+                return
+            self.gui(200, 'application/zip', du_lieu,
+                     {'Content-Disposition': 'attachment; filename="GiamSat.zip"'})
             return
         if not self.la_thay():
             if p in ('/', '/index.html'):
