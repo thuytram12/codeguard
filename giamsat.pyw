@@ -482,6 +482,7 @@ def chay_giao_dien():
     style.configure('TButton', font=('Segoe UI', 11))
     style.configure('Lon.TButton', font=('Segoe UI', 12, 'bold'), padding=8)
     style.configure('TFrame', background=MAU['nen'])
+    goc.option_add('*TCombobox*Listbox.font', ('Segoe UI', 12))
 
     gs = GiamSat()
     khung = {}

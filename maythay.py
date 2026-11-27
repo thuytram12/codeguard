@@ -63,7 +63,7 @@ QUY_DINH_MAC_DINH = {
     ],
     "cua_so_dong_lenh": {
         "ten": "Cửa sổ chạy chương trình",
-        "lop_cua_so": ["ConsoleWindowClass", "CASCADIA_HOSTING_WINDOW_CLASS"],
+        "lop_cua_so": ["ConsoleWindowClass", "CASCADIA_HOSTING_WINDOW_CLASS", "WineConsoleClass"],
         "tieu_de_cam": ["cmd.exe", "command prompt", "dấu nhắc lệnh", "powershell", "pwsh"]
     },
     "bo_qua_lop_cua_so": [
@@ -304,6 +304,12 @@ def nap_trang_thai():
         except ValueError:
             in_ra('!! File trangthai.json bị lỗi, bắt đầu buổi mới.')
     dong_bo_hoc_sinh()
+    # Máy thầy vừa khởi động lại: cho các máy học sinh thời gian kết nối lại,
+    # không tính khoảng thời gian máy thầy bị tắt là "mất tín hiệu".
+    now = time.time()
+    for hs in trang_thai['hoc_sinh'].values():
+        if hs.get('token') and not hs.get('da_tat') and not hs.get('mat_tin_hieu'):
+            hs['lan_cuoi'] = now
 
 
 def danh_dau():

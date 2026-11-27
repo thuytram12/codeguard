@@ -44,7 +44,8 @@
     "ten": "Cửa sổ chạy chương trình",
     "lop_cua_so": [
       "ConsoleWindowClass",
-      "CASCADIA_HOSTING_WINDOW_CLASS"
+      "CASCADIA_HOSTING_WINDOW_CLASS",
+      "WineConsoleClass"
     ],
     "tieu_de_cam": [
       "cmd.exe",
